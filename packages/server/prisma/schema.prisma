@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ENUM FOR STATUS TO FORCE APP INTEGRITY
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                  String     @id
+  public_id           String     @unique
+  username            String     @unique
+  name                String
+  lastname            String
+  email               String     @unique
+  password            String
+  status              UserStatus
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+  username_updated_at DateTime?
+  verified_at         DateTime?
+
+  tokens   VerificationToken[]
+  projects Project[]
+  members  Member[]
+
+  invited_user Invitation[] @relation("InvitedUser")
+  invited_by   Invitation[] @relation("InvitedBy")
+
+  @@map("users")
+}
+
+model VerificationToken {
+  token      String   @id
+  user_id    String
+  type       String
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [public_id], onDelete: Cascade)
+
+  @@map("verification_tokens")
+}
+
+// PROJECT ENUMS TO FORCE APP INTEGRITY
+enum ProjectCategories {
+  DEVELOPMENT_ENGINEERING
+  DESIGN_UX
+  MAINTENANCE_SUPPORT
+  INFRASTRUCTURE_DEVOPS
+  DATA_ANALYSIS
+  MARKETING_SALES
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+model Project {
+  id           String            @id
+  public_id    String            @unique
+  title        String
+  description  String
+  category     ProjectCategories
+  status       ProjectStatus
+  owner_id     String
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @updatedAt
+  completed_at DateTime?
+  archived_at  DateTime?
+
+  owner User @relation(fields: [owner_id], references: [id])
+
+  tasks   Task[]
+  members Member[]
+  invitations Invitation[]
+
+  @@index([owner_id])
+  @@map("projects")
+}
+
+// MEMBER ENUMS TO FORCE APP INTEGRITY
+enum MemberRole {
+  ADMIN
+  CONTRIBUTOR
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+model Member {
+  id         String       @id
+  public_id  String       @unique
+  project_id String
+  user_id    String
+  role       MemberRole
+  status     MemberStatus
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+  joined_at  DateTime
+
+  user    User    @relation(fields: [user_id], references: [id])
+  project Project @relation(fields: [project_id], references: [id])
+
+  created_tasks  Task[] @relation("TaskCreator")
+  assigned_tasks Task[] @relation("TaskAssignee")
+
+  @@unique([project_id, user_id])
+  @@map("members")
+}
+
+// TASK ENUMS TO FORCE APP INTEGRITY
+enum TaskStatus {
+  TODO
+  DOING
+  REVIEW
+  COMPLETED
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Task {
+  id           String       @id
+  public_id    String       @unique
+  objective    String
+  description  String
+  status       TaskStatus
+  priority     TaskPriority
+  assigned_to  String?
+  creator_id   String
+  project_id   String
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  completed_at DateTime?
+  due_date     DateTime
+
+  project  Project @relation(fields: [project_id], references: [id])
+  creator  Member  @relation("TaskCreator", fields: [creator_id], references: [id])
+  assigned Member? @relation("TaskAssignee", fields: [assigned_to], references: [id])
+
+  @@map("tasks")
+}
+
+// INVITATION ENUMS TO FORCE APP INTEGRITY
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Invitation {
+  id              String           @id
+  public_id       String           @unique
+  project_id      String
+  invited_user_id String
+  invited_by_id   String
+  status          InvitationStatus
+  message         String
+  target_role     MemberRole
+  expires_at      DateTime
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  project      Project @relation(fields: [project_id], references: [id])
+  invited_user User    @relation("InvitedUser", fields: [invited_user_id], references: [id])
+  invited_by   User    @relation("InvitedBy", fields: [invited_by_id], references: [id])
+
+  @@map("invitations")
+}

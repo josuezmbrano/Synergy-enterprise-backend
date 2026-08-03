@@ -1,0 +1,205 @@
+import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js';
+import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
+import { containerDI } from 'infrastructure/container/di.config.js';
+import prisma from 'infrastructure/lib/prisma.js';
+import { UserMother } from 'test/builders/user.mother.js';
+import { mailpit } from 'test/clients/mailpit.client.js';
+import { seedUserDefault } from 'test/utils/db-seeder.js';
+
+describe('RegisterUserCase - Integration Tests', () => {
+    let useCase: RegisterUserCase;
+
+    beforeEach(async () => {
+        await prisma.verificationToken.deleteMany({});
+        await prisma.task.deleteMany({});
+        await prisma.project.deleteMany({});
+        await prisma.member.deleteMany({});
+        await prisma.user.deleteMany({});
+
+        useCase = new RegisterUserCase(
+            containerDI.repositories.userRepository,
+            containerDI.services.bcryptPasswordHasher,
+            containerDI.services.jwtAuthService,
+            containerDI.repositories.verificationTokenRepository,
+            containerDI.services.mailService,
+            containerDI.transactionalCoordinator.unitOfWork
+        );
+    });
+
+    describe('Uniqueness Invariant Validations', () => {
+
+        it('should throw an error when attempting to register a username that already exists', async () => {
+            // Seed a default collision target to block the username uniqueness constraint
+            const existingUser = await seedUserDefault(prisma);
+            const primitives = existingUser.toPrimitives();
+
+            const execution = useCase.execute({
+                username: primitives.username,
+                email: 'different-email@synergy.com',
+                name: primitives.name,
+                lastname: primitives.lastname,
+                password: 'SomePassword123!'
+            });
+
+            await expect(execution).rejects.toThrow(UserErrorFactory.usernameAlreadyExists().message);
+        });
+
+        it('should throw an error when attempting to register an email that already exists', async () => {
+            // Seed a default collision target to block the email uniqueness constraint
+            const existingUser = await seedUserDefault(prisma);
+            const primitives = existingUser.toPrimitives();
+
+            const execution = useCase.execute({
+                username: 'completely_new_username',
+                email: primitives.email,
+                name: primitives.name,
+                lastname: primitives.lastname,
+                password: 'SomePassword123!'
+            });
+
+            await expect(execution).rejects.toThrow(UserErrorFactory.emailAlreadyExists().message);
+        });
+    });
+
+    describe('Transactional Integrity (Unit of Work)', () => {
+
+        it('should rollback transaction and not persist anything if an error occurs inside the Unit of Work execution', async () => {
+            // Initialize an unpersisted baseline entity template using the object mother pattern
+            const userTemplate = UserMother.createDefault();
+            const primitives = userTemplate.toPrimitives();
+
+            // Intercept the token save operations to trigger a simulated infrastructure crash within the Unit of Work context
+            vi.spyOn(containerDI.repositories.verificationTokenRepository, 'saveToken').mockRejectedValueOnce(
+                new Error('Database crash during token persistence')
+            );
+
+            await expect(useCase.execute({
+                username: primitives.username,
+                email: primitives.email,
+                name: primitives.name,
+                lastname: primitives.lastname,
+                password: 'SomePassword123!'
+            })).rejects.toThrow('Database crash during token persistence');
+
+            const userInDb = await prisma.user.findFirst({
+                where: { email: primitives.email }
+            });
+
+            expect(userInDb).toBeNull();
+        });
+    });
+
+    describe('Orchestration Workflow & External Side-Effects', () => {
+
+        it('should successfully complete the entire registration workflow (Happy Path)', async () => {
+            // Setup dynamic parameters with unique string components to completely isolate parallel outbox evaluation
+            const uniqueId = Math.random().toString(36).substring(2, 11);
+            const input = {
+                name: 'John',
+                lastname: 'Doe',
+                email: `johndoe-${uniqueId}@synergy.com`,
+                username: `newuser_${uniqueId}`,
+                password: 'Somepassword123!'
+            };
+
+            const output = await useCase.execute(input);
+
+            expect(output).toBeDefined();
+            expect(output.user.id).toBeDefined();
+            expect(output.user.username).toBe(input.username);
+            expect(output.user.fullname).toBe('John Doe');
+            expect(output.user.email).toBe(input.email);
+            expect(output.user.status).toBe('PENDING_VERIFICATION');
+            expect(output.user.verifiedAt).toBeNull();
+
+            expect(output.token).toBeDefined();
+            typeof output.token === 'string';
+
+            const decodedToken = await containerDI.services.jwtAuthService.verifyToken(output.token);
+            expect(decodedToken.sub).toBe(output.user.id);
+            expect(decodedToken.role).toBe('user');
+            expect(decodedToken.verified).toBe(false);
+
+            const userInDb = await prisma.user.findUnique({ where: { public_id: output.user.id } });
+            expect(userInDb?.status).toBe('PENDING_VERIFICATION');
+
+            const isPasswordHashed = await containerDI.services.bcryptPasswordHasher.compare(input.password, userInDb!.password);
+            expect(isPasswordHashed).toBe(true);
+
+            // Fetch the global Mailpit state container slice to verify outbound workflow delivery concurrently
+            const mailpitResponse = await mailpit.listMessages();
+            
+            // Isolate and extract exclusively the message context targeted to this current test's unique payload
+            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === input.email);
+            expect(testEmails.length).toBe(1);
+
+            const capturedEmail = testEmails[0];
+            expect(capturedEmail.To[0].Address).toBe(input.email);
+            expect(capturedEmail.From.Address).toBe('onboarding@resend.dev');
+            expect(capturedEmail.Subject).toBeDefined();
+
+            const tokenInDb = await prisma.verificationToken.findFirst({
+                where: { user_id: output.user.id }
+            });
+            expect(tokenInDb).toBeDefined();
+            expect(capturedEmail.Snippet).toContain(tokenInDb!.token);
+        });
+
+        it('should complete registration successfully even if the mail service fails (try/catch resilience)', async () => {
+            // Setup dynamic parameters with unique string components to completely isolate parallel outbox evaluation
+            const uniqueId = Math.random().toString(36).substring(2, 11);
+            const input = {
+                name: 'John',
+                lastname: 'Doe',
+                email: `johndoe-${uniqueId}@synergy.com`,
+                username: `newuser_${uniqueId}`,
+                password: 'Somepassword123!'
+            };
+
+            // Force a connection drop in the notification gateway to evaluate non-blocking error boundaries
+            vi.spyOn(containerDI.services.mailService, 'sendEmail').mockRejectedValueOnce(
+                new Error('SMTP Server Connection Refused')
+            );
+
+            const output = await useCase.execute(input);
+
+            expect(output).toBeDefined();
+            expect(output.user.username).toBe(input.username);
+
+            const userInDb = await prisma.user.findFirst({ where: { username: input.username } });
+            expect(userInDb).toBeDefined();
+
+            // Verify infrastructure isolation by confirming zero messages were dropped into the outbox for this recipient
+            const mailpitResponse = await mailpit.listMessages();
+            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === input.email);
+            expect(testEmails.length).toBe(0);
+
+            vi.restoreAllMocks();
+        });
+
+        it('should generate a verification token with a valid future expiration date', async () => {
+            // Setup dynamic parameters with unique string components to completely isolate parallel outbox evaluation
+            const uniqueId = Math.random().toString(36).substring(2, 11);
+            const input = {
+                name: 'John',
+                lastname: 'Doe',
+                email: `johndoe-${uniqueId}@synergy.com`,
+                username: `newuser_${uniqueId}`,
+                password: 'Somepassword123!'
+            };
+
+            const output = await useCase.execute(input);
+
+            const tokenInDb = await prisma.verificationToken.findFirst({
+                where: { user_id: output.user.id }
+            });
+
+            expect(tokenInDb).toBeDefined();
+
+            const now = new Date();
+            expect(new Date(tokenInDb!.expires_at).getTime()).toBeGreaterThan(now.getTime());
+        });
+
+    });
+
+});

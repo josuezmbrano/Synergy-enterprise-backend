@@ -1,0 +1,30 @@
+# Dependencias de Node
+node_modules/
+.pnpm-store/
+
+# Variables de entorno locales
+.env
+.env.*
+!.env.example
+
+# Archivos generados y compilados
+dist/
+build/
+*.tsbuildinfo
+
+# Prisma ORM
+**/src/infrastructure/generated/prisma/
+
+# Archivos temporales de testing y snapshots
+coverage/
+.vitest/
+
+# Sistema y Editores
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

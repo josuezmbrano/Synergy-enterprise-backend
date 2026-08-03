@@ -1,0 +1,20 @@
+{
+  "name": "enterprise-project-system",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Project Management System Backend",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "dotenv -e .env -- pnpm --filter @project/server dev",
+    "dev:client": "pnpm --filter @project/client dev",
+    
+    "build:all": "pnpm -r build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.21.0",
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0"
+  }
+}

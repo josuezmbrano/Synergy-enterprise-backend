@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FindAllProjectsCase > Memberships and project list DTO format flow orchestration (PHASE 2) > should throw a CommonDomain common data inconsistency if any project obtained is missing its owner public id > Internal server error: Required public owner id data in 7e697147-2879-48d9-ac4d-8236724b11ac is missing. 1`] = `[CommonDomainError: Internal server error: Required public owner id data in 7e697147-2879-48d9-ac4d-8236724b11ac is missing.]`;
+
+exports[`FindAllProjectsCase > Memberships and project list DTO format flow orchestration (PHASE 2) > should throw a CommonDomain common data inconsistency if any project obtained is missing its owner public id > Internal server error: Required public owner id data in c16daeb4-8848-4431-93ab-a13a16900260 is missing. 1`] = `[CommonDomainError: Internal server error: Required public owner id data in c16daeb4-8848-4431-93ab-a13a16900260 is missing.]`;
+
+exports[`FindAllProjectsCase > Memberships and project list DTO format flow orchestration (PHASE 2) > should throw a CommonDomain common data inconsistency if any project obtained is missing its owner public id 1`] = `
+{
+  "code": "COMMON_DATA_INCONSISTENCY",
+  "date": "2026-05-12T21:09:26.369Z",
+  "errorType": "COMMON",
+  "internalCode": "COMMON_ERROR_002",
+  "isOperational": true,
+  "metaData": undefined,
+  "name": "CommonDomainError",
+}
+`;

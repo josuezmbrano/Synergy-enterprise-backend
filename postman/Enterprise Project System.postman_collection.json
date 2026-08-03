@@ -1,0 +1,1584 @@
+{
+  "info": {
+    "_postman_id": "f33f8603-54b9-4d10-a400-c1fe2342b403",
+    "name": "Enterprise Project System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49444178",
+    "_collection_link": "https://go.postman.co/collection/49444178-f33f8603-54b9-4d10-a400-c1fe2342b403?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "A. Auth & Users",
+      "item": [
+        {
+          "name": "01. Register Requests",
+          "item": [
+            {
+              "name": "🟢 Success Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"Bugsbunnie2104\",\r\n    \"name\": \"John\",\r\n    \"lastname\": \"Doe\",\r\n    \"email\": \"johndoe@synergy.com\",\r\n    \"password\": \"Somepassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🟢 Success Second Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"NeonBunnie222\",\r\n    \"name\": \"Josh\",\r\n    \"lastname\": \"Enrique\",\r\n    \"email\": \"joshenrique@synergy.com\",\r\n    \"password\": \"Enriquepassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Email already exists",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"johnnewemail@synergy.com\",\r\n    \"name\": \"Johnny\",\r\n    \"lastname\": \"Doe Rodriguez\",\r\n    \"password\": \"Somepassword123!\",\r\n    \"username\": \"NeonBunnie2104\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Username already exists",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"johnathan@synergy.com\",\r\n    \"name\": \"Johnny\",\r\n    \"lastname\": \"Doe Rodriguez\",\r\n    \"password\": \"Somepassword123!\",\r\n    \"username\": \"bugsbunnie0421\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "02. Login Requests",
+          "item": [
+            {
+              "name": "🟢 Success Login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"johny@synergy.com\",\r\n    \"password\": \"Anothernewpassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🟢 Success Second user login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"joshenrique@synergy.com\",\r\n    \"password\": \"Enriquepassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Wrong password",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"johnnewemail@synergy.com\",\r\n    \"password\": \"Anothernewpassword789!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "03. Verify Email Requests",
+          "item": [
+            {
+              "name": "🟢 Success Email verification",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"token\": \"43b3b808-086f-43b4-a3e8-3d40ff8f3cc7\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/verify-email",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "verify-email"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Invalid or expired Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"token\": \"227faed2-ba24-4586-8ba8-81e0b9573018\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/verify-email",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "verify-email"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "04. Find Profiles Requests",
+          "item": [
+            {
+              "name": "🟢 Success Profile found",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"query\": \"johnnewemail@synergy.com\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/find-user",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "find-user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Non-existing user",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"query\": \"este_usuario_no_existe_en_el_sistema_999@falso.com\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/find-user",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "find-user"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "05. Update Email Requests",
+          "item": [
+            {
+              "name": "🟢 Success Update Email",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"newEmail\": \"johny@synergy.com\",\r\n    \"currentPassword\": \"Anothernewpassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-email",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-email"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Email already exists",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"currentPassword\": \"Anothernewpassword123!\",\r\n    \"newEmail\": \"johnnewemail@synergy.com\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-email",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-email"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "06. Resend Email Verification Requests",
+          "item": [
+            {
+              "name": "🟢 Success Resend Email Verification",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/resend-email-verification",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "resend-email-verification"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Email cooldown violation",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/resend-email-verification",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "resend-email-verification"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "07. Update Password Requests",
+          "item": [
+            {
+              "name": "🟢 Success Update Password",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"newPassword\": \"NewPassword456!\",\r\n    \"oldPassword\": \"Somepassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-password"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Reused Password",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"newPassword\": \"Anothernewpassword123!\",\r\n    \"oldPassword\": \"Anothernewpassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-password"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "08. Update Profile Requests",
+          "item": [
+            {
+              "name": "🟢 Success Update Profile",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\": \"Johnathan\",\r\n    \"lastname\": \"Doe Rodriguez\",\r\n    \"username\": \"Bugsbunnie0421\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-profile",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-profile"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Username already taken",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"username\": \"NeonBunnie222\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/users/update-profile",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "update-profile"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "09. SET Password Reset Requests",
+          "item": [
+            {
+              "name": "🟢 Success Request Password Reset",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"johnnewemail@synergy.com\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/request-password-reset",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "request-password-reset"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Silent return non-existent email",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"this_email_does_not_exist_at_all_12345@falso.com\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/request-password-reset",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "request-password-reset"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "10 .Reset Password Requests",
+          "item": [
+            {
+              "name": "🟢 Success Reset Password",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"newPassword\": \"Anothernewpassword123!\",\r\n    \"token\": \"a75d87df-6a5b-4b35-9f6a-2ebe31980737\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/reset-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "reset-password"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Invalid Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"token\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\r\n    \"newPassword\": \"NuevaPasswordSegura999!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/reset-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "reset-password"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "B. Projects",
+      "item": [
+        {
+          "name": "01. Create Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Create project",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"Synergy Core System\",\r\n    \"description\": \"Modular backend development with Clean Architecture and Prisma\",\r\n    \"category\": \"INFRASTRUCTURE/DEVOPS\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🟢 Success Create second project",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"Synergy Core System\",\r\n    \"description\": \"Modular backend development with Clean Architecture and Prisma\",\r\n    \"category\": \"DESIGN/UX\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Project already exists",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"Synergy Core System\",\r\n    \"description\": \"An attempt to clone the same project\",\r\n    \"category\": \"INFRASTRUCTURE/DEVOPS\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "02. Find All Projects Requests",
+          "item": [
+            {
+              "name": "🟢 Success Find all projects",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Fast return (No memberships)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "03. Find Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Project Found (User is a member)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Unauthorized Access (Project masking as not found)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "04. Update Project Info Requests",
+          "item": [
+            {
+              "name": "🟢 Success Update project info",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"Synergy Core Architecture v2\",\r\n    \"description\": \"Updated project scope detailing the domain-driven architecture design patterns.\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Title Collision",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"Synergy Core Architecture v2\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/1d208f54-8a9b-4213-a737-519132d1f1c6",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "1d208f54-8a9b-4213-a737-519132d1f1c6"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "05. Start Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Start a project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/start",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "start"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Starting an unprepared project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/start",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "start"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "06. Complete Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Complete a project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/complete",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "complete"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴  Error - Active dependencies (Pending tasks)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/complete",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "complete"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "07. Archive Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Archive a project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/archive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "archive"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Unauthorized member",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/archive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "archive"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "08. Unarchive Project Requests",
+          "item": [
+            {
+              "name": "🟢 Success Unarchive a project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/unarchive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "unarchive"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Unarchiving an Already Active/Planned Project",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/unarchive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "unarchive"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "C. Members",
+      "item": [
+        {
+          "name": "01. Invite Members Requests",
+          "item": [
+            {
+              "name": "🟢 Success Invite a new member",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"targetUserId\": \"70c0a234-7827-4ef0-8a58-522231d7eb4f\",\r\n    \"role\": \"CONTRIBUTOR\" \r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/members/invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "members",
+                    "invite"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Existing collaborator",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"targetUserId\": \"70c0a234-7827-4ef0-8a58-522231d7eb4f\",\r\n    \"role\": \"CONTRIBUTOR\" \r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/members/invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "members",
+                    "invite"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "02. Find All Members Requests",
+          "item": [
+            {
+              "name": "🟢 Success Find all project members",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "members"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Unauthorized Visibility (Project Masking)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/1d208f54-8a9b-4213-a737-519132d1f1c6/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "1d208f54-8a9b-4213-a737-519132d1f1c6",
+                    "members"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "03. Find Member Requests",
+          "item": [
+            {
+              "name": "🟢 Success Member found",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/members/7d4d6fe2-81fc-4ef0-ab02-12c1a0e937e2",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "members",
+                    "7d4d6fe2-81fc-4ef0-ab02-12c1a0e937e2"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Pending invitation masking",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/94495392-135d-4c9d-8786-4e4788df0bb1/members/7d4d6fe2-81fc-4ef0-ab02-12c1a0e937e2",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "94495392-135d-4c9d-8786-4e4788df0bb1",
+                    "members",
+                    "7d4d6fe2-81fc-4ef0-ab02-12c1a0e937e2"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "04. Set Active State Requests",
+          "item": [
+            {
+              "name": "🟢 Success Active status record",
+              "request": {
+                "method": "PATCH",
+                "header": []
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Activating an unverified platform member",
+              "request": {
+                "method": "PATCH",
+                "header": []
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "05. Set Inactive State Requests",
+          "item": [
+            {
+              "name": "🟢 Success Deactivate a project member",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/ACTIVE_MEMBER_PUBLIC_UUID/inactive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "ACTIVE_MEMBER_PUBLIC_UUID",
+                    "inactive"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Deactivating an Owner",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/ACTIVE_MEMBER_PUBLIC_UUID/inactive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "ACTIVE_MEMBER_PUBLIC_UUID",
+                    "inactive"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "06. Set On Leave State Requests",
+          "item": [
+            {
+              "name": "🟢  Success On leave status record",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/ACTIVE_MEMBER_PUBLIC_UUID/on-leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "ACTIVE_MEMBER_PUBLIC_UUID",
+                    "on-leave"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Breaking minimum active admin quota",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/SOLE_ADMIN_MEMBER_PUBLIC_UUID/on-leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "SOLE_ADMIN_MEMBER_PUBLIC_UUID",
+                    "on-leave"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Breaking minimum active contributors quota",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/LAST_ACTIVE_CONTRIBUTOR_UUID/leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "LAST_ACTIVE_CONTRIBUTOR_UUID",
+                    "leave"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "07. Set Admin Role Requests",
+          "item": [
+            {
+              "name": "🟢 Success Promote a member to admin",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/TARGET_MEMBER_PUBLIC_UUID/admin",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "TARGET_MEMBER_PUBLIC_UUID",
+                    "admin"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🔴 Error - Admin slot limit exceeded",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/MAXED_OUT_ADMIN_MEMBER_UUID/admin",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "MAXED_OUT_ADMIN_MEMBER_UUID",
+                    "admin"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "08. Set Contributor Role Requests",
+          "item": [
+            {
+              "name": "🔴 Success Change role to contributor",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/TARGET_MEMBER_PUBLIC_UUID/contributor",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "TARGET_MEMBER_PUBLIC_UUID",
+                    "contributor"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "🟢 Error - Degrading the project owner",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/projects/YOUR_PROJECT_PUBLIC_UUID/members/YOUR_OWN_OWNER_MEMBER_UUID/contributor",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "projects",
+                    "YOUR_PROJECT_PUBLIC_UUID",
+                    "members",
+                    "YOUR_OWN_OWNER_MEMBER_UUID",
+                    "contributor"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
