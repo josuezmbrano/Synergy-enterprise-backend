@@ -46,7 +46,7 @@ describe('LoginUserCase.', () => {
             const input = { email: 'some@gmail.com', password: 'ronalcristiano3032' }
 
             await expect(sut.execute(input)).rejects.toThrow(AuthErrorFactory.invalidCredentials().message)
-            expect(mockUserRepository.findByEmail).toHaveBeenCalledWith({ _props: 'some@gmail.com', voType: 'UserEmailVo' })
+            expect(mockUserRepository.findByEmail).toHaveBeenCalledWith({ _props: 'some@gmail.com' })
             expect(mockPasswordHasher.compare).toHaveBeenCalledWith('ronalcristiano3032', user.password.value)
             expect(mockAuthService.generateToken).not.toHaveBeenCalled();
         })

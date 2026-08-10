@@ -2,7 +2,6 @@ import { DateVo } from '../common/date.vo.js';
 
 export class InvitationExpirationVo extends DateVo {
 
-    public readonly voType = 'DateVo';
 
     private static readonly EXPIRATION_TIME = 168
 

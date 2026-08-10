@@ -3,8 +3,6 @@ import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js'
 
 export class TaskIdVo extends UniqueIdentifier {
 
-    public readonly identifierType = 'TaskId';
-
     private constructor(uuid: string) {
         super(uuid)
     }

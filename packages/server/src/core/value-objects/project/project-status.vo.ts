@@ -4,7 +4,6 @@ import { ALLOWED_PROJECT_STATUS, PROJECT_CONSTRAINTS } from '@project/common/con
 
 export class ProjectStatusVo extends BaseValueObject<string> {
 
-    public readonly voType = 'ProjectStatusVo';
 
     public static readonly PLANNED = PROJECT_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.PLANNED
     public static readonly IN_PROGRESS = PROJECT_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.IN_PROGRESS

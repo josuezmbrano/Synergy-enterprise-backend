@@ -4,7 +4,6 @@ import { ALLOWED_PRIORITY_OPTIONS, TASK_CONSTRAINTS } from '@project/common/cons
 
 export class TaskPriorityVo extends BaseValueObject<string> {
 
-    public readonly voType = 'TaskPriorityVo';
 
     public static readonly LOW = TASK_CONSTRAINTS.PRIORITY_ALLOWED_OPTIONS.LOW
     public static readonly MEDIUM = TASK_CONSTRAINTS.PRIORITY_ALLOWED_OPTIONS.MEDIUM

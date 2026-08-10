@@ -4,7 +4,6 @@ import { USER_CONSTRAINTS, ALLOWED_USER_STATUS } from '@project/common/constants
 
 export class UserStatusVo extends BaseValueObject<string> {
 
-    public readonly voType = 'UserStatusVo';
 
     public static readonly ACTIVE = USER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.ACTIVE
     public static readonly SUSPENDED = USER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.SUSPENDED

@@ -4,7 +4,6 @@ import { InvitationErrorFactory } from 'core/errors/factories/invitation-factory
 
 export class InvitationStatusVo extends BaseValueObject<string> {
 
-    public readonly voType = 'InvitationStatusVo';
 
     public static readonly PENDING = INVITATION_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.PENDING
     public static readonly ACCEPTED = INVITATION_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.ACCEPTED

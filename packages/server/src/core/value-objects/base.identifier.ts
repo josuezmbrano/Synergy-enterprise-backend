@@ -4,7 +4,6 @@ export abstract class BaseIdentifier <T> {
 
     protected readonly _value: T
 
-    public abstract readonly identifierType: string
 
     protected constructor(value: T) {
         this._value = value
@@ -20,11 +19,7 @@ export abstract class BaseIdentifier <T> {
             return false
         }
 
-        if (!(id instanceof BaseIdentifier)) {
-            return false
-        }
-
-        if (this.identifierType !== id.identifierType ) {
+        if (this.constructor !== id.constructor) {
             return false
         }
 

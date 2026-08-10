@@ -4,7 +4,6 @@ import { ALLOWED_STATUS_OPTIONS, TASK_CONSTRAINTS } from '@project/common/consta
 
 export class TaskStatusVo extends BaseValueObject<string> {
 
-    public readonly voType = 'TaskStatusVo';
 
     public static readonly TODO = TASK_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.TODO
     public static readonly DOING = TASK_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.DOING

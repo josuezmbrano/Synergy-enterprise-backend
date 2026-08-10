@@ -3,8 +3,6 @@ import { BaseValueObject } from '../base.value-objects.js';
 
 export class DateVo extends BaseValueObject<Date> {
 
-    public readonly voType = 'DateVo';
-
     protected constructor(value: Date) {
         super(new Date(value.getTime()))
     }

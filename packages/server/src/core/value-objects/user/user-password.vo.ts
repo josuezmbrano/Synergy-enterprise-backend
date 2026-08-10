@@ -5,7 +5,6 @@ import { IPasswordHasher } from 'core/services/password-interface.service.js';
 
 export class UserPasswordVo extends BaseValueObject<string> {
 
-    public readonly voType = 'UserPasswordVo';
 
     private constructor(value: string) {
         super(value)

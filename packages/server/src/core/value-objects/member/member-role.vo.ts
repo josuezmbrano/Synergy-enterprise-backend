@@ -4,7 +4,6 @@ import { ALLOWED_MEMBER_ROLES, MEMBER_CONSTRAINTS } from '@project/common/consta
 
 export class MemberRoleVo extends BaseValueObject<string> {
 
-    public readonly voType = 'MemberRoleVo';
 
     public static readonly ADMIN = MEMBER_CONSTRAINTS.ROLE_ALLOWED_OPTIONS.ADMIN
     public static readonly CONTRIBUTOR = MEMBER_CONSTRAINTS.ROLE_ALLOWED_OPTIONS.CONTRIBUTOR

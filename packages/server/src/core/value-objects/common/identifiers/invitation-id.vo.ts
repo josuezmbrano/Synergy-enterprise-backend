@@ -2,8 +2,6 @@ import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js';
 
 export class InvitationIdVo extends UniqueIdentifier {
 
-    public readonly identifierType = 'InvitationId';
-
     private constructor(uuid: string) {
         super(uuid)
     }

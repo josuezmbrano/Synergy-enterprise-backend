@@ -2,8 +2,6 @@ import { DateVo } from '../common/date.vo.js';
 
 export class TokenExpirationVo extends DateVo {
 
-    public readonly voType = 'DateVo';
-
     private static readonly EXPIRATION_TIME = 24
 
     private constructor(value: Date) {

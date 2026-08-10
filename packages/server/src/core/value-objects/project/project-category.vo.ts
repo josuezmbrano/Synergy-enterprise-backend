@@ -4,7 +4,6 @@ import { ALLOWED_PROJECT_CATEGORIES, PROJECT_CONSTRAINTS } from '@project/common
 
 export class ProjectCategoryVo extends BaseValueObject<string> {
 
-    public readonly voType = 'ProjectCategoryVo';
 
     public static readonly DEVELOPMENT_ENGINEERING = PROJECT_CONSTRAINTS.CATEGORY_ALLOWED_OPTIONS.DEVELOPMENT_ENGINEERING
     public static readonly DESIGN_UX = PROJECT_CONSTRAINTS.CATEGORY_ALLOWED_OPTIONS.DESIGN_UX

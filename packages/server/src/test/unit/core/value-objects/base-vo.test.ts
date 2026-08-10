@@ -2,23 +2,17 @@ import { BaseValueObject } from 'core/value-objects/base.value-objects.js';
 
 class StringVoStub extends BaseValueObject<string> {
 
-    public readonly voType = 'StringVoStub';
-
     constructor(value: string) { super(value); }
     static create(value: string) { return new StringVoStub(value); }
 }
 
 class ObjectVoStub extends BaseValueObject<{ name: string; age: number }> {
 
-    public readonly voType = 'ObjectVoStub';
-
     constructor(value: { name: string; age: number }) { super(value); }
     static create(value: { name: string; age: number }) { return new ObjectVoStub(value); }
 }
 
 class DifferentVoStub extends BaseValueObject<string> {
-
-    public readonly voType = 'DifferentVoStub';
 
     constructor(value: string) { super(value); }
     static create(value: string) { return new DifferentVoStub(value); }

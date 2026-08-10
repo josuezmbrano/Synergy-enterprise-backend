@@ -4,7 +4,6 @@ import { InvitationErrorFactory } from 'core/errors/factories/invitation-factory
 
 export class InvitationMessageVo extends BaseValueObject<string> {
 
-    public readonly voType = 'InvitationMessageVo';
 
     private constructor(value: string) {
         super(value)

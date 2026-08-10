@@ -4,8 +4,6 @@ import { USER_CONSTRAINTS } from '@project/common/constants/user.constants.js';
 
 export class UserEmailVo extends BaseValueObject<string> {
 
-    public readonly voType = 'UserEmailVo';
-
     private constructor(value: string) {
         super(value)
     }

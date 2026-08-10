@@ -4,7 +4,6 @@ import { PROJECT_CONSTRAINTS } from '@project/common/constants/project.constants
 
 export class ProjectTitleVo extends BaseValueObject<string> {
 
-    public readonly voType = 'ProjectTitleVo';
 
     private constructor(value: string) {
         super(value)

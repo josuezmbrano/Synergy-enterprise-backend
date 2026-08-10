@@ -4,7 +4,6 @@ import { TASK_CONSTRAINTS } from '@project/common/constants/task.constants.js'
 
 export class TaskDescriptionVo extends BaseValueObject<string> {
 
-    public readonly voType = 'TaskDescriptionVo';
 
     private constructor(value: string) {
         super(value)

@@ -4,7 +4,6 @@ import { ALLOWED_MEMBER_STATUS, MEMBER_CONSTRAINTS } from '@project/common/const
 
 export class MemberStatusVo extends BaseValueObject<string> {
 
-    public readonly voType = 'MemberStatusVo';
 
     public static readonly ACTIVE = MEMBER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.ACTIVE
     public static readonly INACTIVE = MEMBER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.INACTIVE
