@@ -12,10 +12,6 @@ import { ProjectCategoryOptions, ProjectStatusOptions } from '@project/common/co
 
 export class ProjectEntityClass extends BaseEntity<ProjectIdVo, ProjectProps> {
 
-    get entityType(): string {
-        return 'Project'
-    }
-
     private readonly _ownerPublicId?: UserIdVo
 
     private constructor(props: ProjectProps, id: ProjectIdVo, createdAt?: DateVo, updatedAt?: DateVo, ownerPublicId?: UserIdVo) {

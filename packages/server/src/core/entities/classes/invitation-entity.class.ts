@@ -14,10 +14,6 @@ import { MemberRoleOptions } from '@project/common/constants/member.constants.js
 
 export class InvitationEntityClass extends BaseEntity<InvitationIdVo, InvitationProps> {
 
-    get entityType(): string {
-        return 'Invitation'
-    }
-
     private constructor(props: InvitationProps, id: InvitationIdVo, createdAt?: DateVo, updatedAt?: DateVo) {
         super(id, props, createdAt, updatedAt)
     }
@@ -119,7 +115,6 @@ export class InvitationEntityClass extends BaseEntity<InvitationIdVo, Invitation
 
         if (!this._props.status.isPending()) throw InvitationErrorFactory.invitationAlreadyProcessed()
     }
-
 
 
     // UPDATE ENTITY /////////////////////////////////////////////////////////////////////////

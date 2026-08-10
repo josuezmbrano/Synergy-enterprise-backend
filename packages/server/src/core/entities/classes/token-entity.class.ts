@@ -8,10 +8,6 @@ import { DateVo } from 'core/value-objects/common/date.vo.js';
 
 export class VerificationTokenEntityClass extends BaseEntity<TokenIdVo, TokenProps> {
 
-    get entityType(): string {
-        return 'VerificationToken'
-    }
-
     private constructor(props: TokenProps, id: TokenIdVo, createdAt?: DateVo) {
         super(id, props, createdAt)
     }

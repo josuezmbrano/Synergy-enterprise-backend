@@ -12,31 +12,27 @@ export abstract class BaseEntity <I extends UniqueIdentifier, T> {
     protected constructor(id: I, props: T, createdAt?: DateVo, updatedAt?: DateVo) {
         this._id = id
         this._props = props
-        this.createdAt = createdAt ?? DateVo.create()
-        this.updatedAt = updatedAt ?? DateVo.create()
+
+        const now = DateVo.create()
+        this.createdAt = createdAt ?? now
+        this.updatedAt = updatedAt ?? now
     }
 
     public get id() {
         return this._id
     }
 
-    abstract get entityType(): string
-
     protected markAsUpdated(): void {
         this.updatedAt = DateVo.create()
     }
 
-    public equals(object?: BaseEntity<I, T>): boolean {
+    public equals(object?: this): boolean {
 
         if (object === null || object === undefined) {
             return false
         }
 
-        if (!(object instanceof BaseEntity)) {
-            return false
-        }
-
-        if (object.entityType !== this.entityType) {
+        if (this.constructor !== object.constructor) {
             return false
         }
 

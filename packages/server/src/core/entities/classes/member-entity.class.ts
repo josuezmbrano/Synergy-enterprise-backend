@@ -12,10 +12,6 @@ import { MemberRoleOptions, MemberStatusOptions } from '@project/common/constant
 
 export class MemberEntityClass extends BaseEntity<MemberIdVo, MemberProps> {
 
-    get entityType(): string {
-        return 'Member'
-    }
-
     private readonly _userPublicId?: UserIdVo
 
     private constructor(props: MemberProps, id: MemberIdVo, createdAt?: DateVo, updatedAt?: DateVo, userPublicId?: UserIdVo) {

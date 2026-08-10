@@ -14,10 +14,6 @@ import { TaskPriorityOptions, TaskStatusOptions } from '@project/common/constant
 
 export class TaskEntityClass extends BaseEntity<TaskIdVo, TaskProps> {
 
-    get entityType(): string {
-        return 'Task'
-    }
-
     private readonly _assignedToPublicId?: MemberIdVo
     private readonly _creatorPublicId?: MemberIdVo
 

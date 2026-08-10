@@ -13,10 +13,6 @@ import { UserStatusOptions } from '@project/common/constants/user.constants.js';
 
 export class UserEntityClass extends BaseEntity<UserIdVo, UserProps> {
 
-    get entityType(): string {
-        return 'User'
-    }
-
     private constructor(props: UserProps, id: UserIdVo, createdAt?: DateVo, updatedAt?: DateVo) {
         super(id, props, createdAt, updatedAt)
     }
