@@ -2,8 +2,9 @@ import { ProjectErrorFactory } from 'core/errors/factories/project-factory.error
 import { BaseValueObject } from '../base.value-objects.js';
 import { PROJECT_CONSTRAINTS } from '@project/common/constants/project.constants.js';
 
-export class ProjectTitleVo extends BaseValueObject<string> {
+export class ProjectTitleVo extends BaseValueObject<string, 'ProjectTitleVo'> {
 
+    protected readonly voType = 'ProjectTitleVo' as const
 
     private constructor(value: string) {
         super(value)

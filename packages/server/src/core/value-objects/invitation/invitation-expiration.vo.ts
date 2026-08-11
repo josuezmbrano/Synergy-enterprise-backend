@@ -1,7 +1,9 @@
+import { BaseDate } from '../base.date.js';
 import { DateVo } from '../common/date.vo.js';
 
-export class InvitationExpirationVo extends DateVo {
+export class InvitationExpirationVo extends BaseDate<'InvitationExpirationVo'> {
 
+    protected readonly voType = 'InvitationExpirationVo' as const
 
     private static readonly EXPIRATION_TIME = 168
 

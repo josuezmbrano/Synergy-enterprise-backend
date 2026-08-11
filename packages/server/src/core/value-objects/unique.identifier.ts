@@ -1,7 +1,9 @@
 import { CommonErrorFactory } from 'core/errors/factories/common-factory.error.js';
 import { BaseIdentifier } from './base.identifier.js';
 
-export abstract class UniqueIdentifier extends BaseIdentifier<string> {
+export abstract class UniqueIdentifier<ID extends string> extends BaseIdentifier<string, ID> {
+
+    protected abstract readonly identifierType: ID
 
     private static readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 

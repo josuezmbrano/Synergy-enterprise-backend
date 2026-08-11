@@ -1,6 +1,10 @@
+import { BaseDate } from '../base.date.js';
 import { DateVo } from '../common/date.vo.js';
 
-export class TokenExpirationVo extends DateVo {
+
+export class TokenExpirationVo extends BaseDate<'TokenExpirationVo'>{
+
+    protected readonly voType = 'TokenExpirationVo' as const
 
     private static readonly EXPIRATION_TIME = 24
 

@@ -2,8 +2,9 @@ import { ProjectErrorFactory } from 'core/errors/factories/project-factory.error
 import { BaseValueObject } from '../base.value-objects.js';
 import { ALLOWED_PROJECT_STATUS, PROJECT_CONSTRAINTS } from '@project/common/constants/project.constants.js'
 
-export class ProjectStatusVo extends BaseValueObject<string> {
+export class ProjectStatusVo extends BaseValueObject<string, 'ProjectStatusVo'> {
 
+    protected readonly voType = 'ProjectStatusVo' as const
 
     public static readonly PLANNED = PROJECT_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.PLANNED
     public static readonly IN_PROGRESS = PROJECT_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.IN_PROGRESS

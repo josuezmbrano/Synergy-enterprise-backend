@@ -1,7 +1,8 @@
 import { isEqual } from 'lodash-es'
 
-export abstract class BaseIdentifier <T> {
+export abstract class BaseIdentifier <T, ID extends string> {
 
+    protected abstract readonly identifierType: ID
     protected readonly _value: T
 
 
@@ -13,13 +14,13 @@ export abstract class BaseIdentifier <T> {
         return this._value
     }
 
-    public equals(id?: BaseIdentifier<T>) {
+    public equals(id?: this) {
 
         if (id === null || id === undefined) {
             return false
         }
 
-        if (this.constructor !== id.constructor) {
+        if (this.identifierType !== id.identifierType) {
             return false
         }
 

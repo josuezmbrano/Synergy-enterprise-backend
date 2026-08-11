@@ -2,8 +2,9 @@ import { TaskErrorFactory } from 'core/errors/factories/task-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { ALLOWED_STATUS_OPTIONS, TASK_CONSTRAINTS } from '@project/common/constants/task.constants.js';
 
-export class TaskStatusVo extends BaseValueObject<string> {
+export class TaskStatusVo extends BaseValueObject<string, 'TaskStatusVo'> {
 
+    protected readonly voType = 'TaskStatusVo' as const
 
     public static readonly TODO = TASK_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.TODO
     public static readonly DOING = TASK_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.DOING

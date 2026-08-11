@@ -2,8 +2,9 @@ import { ALLOWED_INVITATION_STATUS, INVITATION_CONSTRAINTS } from '@project/comm
 import { BaseValueObject } from '../base.value-objects.js';
 import { InvitationErrorFactory } from 'core/errors/factories/invitation-factory.error.js';
 
-export class InvitationStatusVo extends BaseValueObject<string> {
+export class InvitationStatusVo extends BaseValueObject<string, 'InvitationStatusVo'> {
 
+    protected readonly voType = 'InvitationStatusVo' as const
 
     public static readonly PENDING = INVITATION_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.PENDING
     public static readonly ACCEPTED = INVITATION_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.ACCEPTED

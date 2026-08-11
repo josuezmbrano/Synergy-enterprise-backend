@@ -2,8 +2,9 @@ import { MemberErrorFactory } from 'core/errors/factories/member-factory.error.j
 import { BaseValueObject } from '../base.value-objects.js';
 import { ALLOWED_MEMBER_ROLES, MEMBER_CONSTRAINTS } from '@project/common/constants/member.constants.js';
 
-export class MemberRoleVo extends BaseValueObject<string> {
+export class MemberRoleVo extends BaseValueObject<string, 'MemberRoleVo'> {
 
+    protected readonly voType = 'MemberRoleVo' as const
 
     public static readonly ADMIN = MEMBER_CONSTRAINTS.ROLE_ALLOWED_OPTIONS.ADMIN
     public static readonly CONTRIBUTOR = MEMBER_CONSTRAINTS.ROLE_ALLOWED_OPTIONS.CONTRIBUTOR

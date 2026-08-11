@@ -2,8 +2,10 @@ import { ProjectErrorFactory } from 'core/errors/factories/project-factory.error
 import { BaseValueObject } from '../base.value-objects.js';
 import { ALLOWED_PROJECT_CATEGORIES, PROJECT_CONSTRAINTS } from '@project/common/constants/project.constants.js'
 
-export class ProjectCategoryVo extends BaseValueObject<string> {
+export class ProjectCategoryVo extends BaseValueObject<string, 'ProjectCategoryVo'> {
 
+
+    protected readonly voType = 'ProjectCategoryVo' as const
 
     public static readonly DEVELOPMENT_ENGINEERING = PROJECT_CONSTRAINTS.CATEGORY_ALLOWED_OPTIONS.DEVELOPMENT_ENGINEERING
     public static readonly DESIGN_UX = PROJECT_CONSTRAINTS.CATEGORY_ALLOWED_OPTIONS.DESIGN_UX

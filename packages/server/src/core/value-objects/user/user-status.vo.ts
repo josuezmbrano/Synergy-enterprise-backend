@@ -2,8 +2,9 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { USER_CONSTRAINTS, ALLOWED_USER_STATUS } from '@project/common/constants/user.constants.js'
 
-export class UserStatusVo extends BaseValueObject<string> {
+export class UserStatusVo extends BaseValueObject<string, 'UserStatusVo'> {
 
+    protected readonly voType = 'UserStatusVo' as const
 
     public static readonly ACTIVE = USER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.ACTIVE
     public static readonly SUSPENDED = USER_CONSTRAINTS.STATUS_ALLOWED_OPTIONS.SUSPENDED

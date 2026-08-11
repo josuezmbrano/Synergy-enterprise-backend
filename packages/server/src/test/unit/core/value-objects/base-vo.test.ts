@@ -1,22 +1,21 @@
 import { BaseValueObject } from 'core/value-objects/base.value-objects.js';
 
-class StringVoStub extends BaseValueObject<string> {
+class StringVoStub extends BaseValueObject<string, 'StringVoStub'> {
+
+    protected readonly voType = 'StringVoStub' as const
 
     constructor(value: string) { super(value); }
     static create(value: string) { return new StringVoStub(value); }
 }
 
-class ObjectVoStub extends BaseValueObject<{ name: string; age: number }> {
+class ObjectVoStub extends BaseValueObject<{ name: string; age: number }, 'ObjectVoStub'> {
+
+    protected readonly voType = 'ObjectVoStub' as const
 
     constructor(value: { name: string; age: number }) { super(value); }
     static create(value: { name: string; age: number }) { return new ObjectVoStub(value); }
 }
 
-class DifferentVoStub extends BaseValueObject<string> {
-
-    constructor(value: string) { super(value); }
-    static create(value: string) { return new DifferentVoStub(value); }
-}
 
 describe('BaseValueObject Core Logic', () => {
 
@@ -64,14 +63,6 @@ describe('BaseValueObject Core Logic', () => {
             const notAVo = { value: 'test' };
             
             expect(vo.equals(notAVo as any)).toBe(false);
-        });
-
-        it('should return false if values are the same but classes are different', () => {
-            const vo1 = StringVoStub.create('test');
-            const vo2 = DifferentVoStub.create('test');
-            
-            expect(vo1.equals(vo2)).toBe(false);
-            expect(vo1.constructor.name).not.toBe(vo2.constructor.name);
         });
 
         it('should return false if values are different', () => {

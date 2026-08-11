@@ -1,7 +1,9 @@
 import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js'
 
 
-export class ProjectIdVo extends UniqueIdentifier {
+export class ProjectIdVo extends UniqueIdentifier<'ProjectIdVo'> {
+
+    protected readonly identifierType = 'ProjectIdVo' as const;
 
     private constructor(uuid: string) {
         super(uuid)

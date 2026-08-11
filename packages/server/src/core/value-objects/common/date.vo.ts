@@ -1,14 +1,18 @@
 import { CommonErrorFactory } from 'core/errors/factories/common-factory.error.js';
-import { BaseValueObject } from '../base.value-objects.js';
+import { BaseDate } from '../base.date.js';
 
-export class DateVo extends BaseValueObject<Date> {
+export class DateVo extends BaseDate<'DateVo'> {
+
+    protected readonly voType = 'DateVo' as const
 
     protected constructor(value: Date) {
-        super(new Date(value.getTime()))
+        super(value)
     }
 
     public static create(value?: Date | string | number): DateVo {
-        const date = value ? new Date(value) : new Date()
+        const date = value === undefined
+            ? new Date()
+            : new Date(value)
 
         if (isNaN(date.getTime())) {
             throw CommonErrorFactory.commonValidationFailed(
@@ -31,27 +35,4 @@ export class DateVo extends BaseValueObject<Date> {
         copy.setHours(0, 0, 0, 0)
         return DateVo.create(copy)
     }
-
-    public get value(): Date {
-        return new Date(this._props.getTime());
-    }
-
-    public isBefore(otherDate: DateVo): boolean {
-        return this.value.getTime() < otherDate.value.getTime()
-    }
-
-    public isAfter(otherDate: DateVo): boolean {
-        return this.value.getTime() > otherDate.value.getTime()
-    }
-
-    public equals(otherDate: DateVo): boolean {
-        return this.value.getTime() === otherDate.value.getTime()
-    }
-
-    public toISO(): string {
-        return this.value.toISOString()
-    }
-
-    
-
 }

@@ -1,7 +1,8 @@
 import { BaseValueObject } from '../base.value-objects.js';
 
-export class TokenTypeVo extends BaseValueObject<string> {
+export class TokenTypeVo extends BaseValueObject<string, 'TokenTypeVo'> {
 
+    protected readonly voType = 'TokenTypeVo' as const
 
     private static readonly EMAIL_VERIFICATION = 'EMAIL_VERIFICATION'
     private static readonly PASSWORD_RESET = 'PASSWORD_RESET'

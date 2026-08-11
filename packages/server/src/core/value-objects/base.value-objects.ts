@@ -1,27 +1,26 @@
 import { isEqual } from 'lodash-es'
 import { deepFreeze, DeepReadonly } from 'core/utils/deepFreeze.js'
 
-export abstract class BaseValueObject<T> {
+export abstract class BaseValueObject<T, V extends string> {
 
+    protected abstract readonly voType: V
     protected readonly _props: DeepReadonly<T>
     
     protected constructor(props: T) {
         this._props = deepFreeze(props)
-
-        Object.freeze(this)
     }
 
     public get value(): DeepReadonly<T> {
         return this._props
     }
 
-    public equals(vo?: BaseValueObject<T>): boolean {
+    public equals(vo?: BaseValueObject<T, V>): boolean {
 
         if (vo === null || vo === undefined) {
             return false
         }
 
-        if (this.constructor !== vo.constructor) {
+        if (this.voType !== vo.voType) {
             return false
         }
 

@@ -2,8 +2,9 @@ import { INVITATION_CONSTRAINTS } from '@project/common/constants/invitation.con
 import { BaseValueObject } from '../base.value-objects.js';
 import { InvitationErrorFactory } from 'core/errors/factories/invitation-factory.error.js';
 
-export class InvitationMessageVo extends BaseValueObject<string> {
+export class InvitationMessageVo extends BaseValueObject<string, 'InvitationMessageVo'> {
 
+    protected readonly voType = 'InvitationMessageVo' as const
 
     private constructor(value: string) {
         super(value)

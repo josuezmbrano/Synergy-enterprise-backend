@@ -2,7 +2,9 @@ import { TaskErrorFactory } from 'core/errors/factories/task-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { TASK_CONSTRAINTS } from '@project/common/constants/task.constants.js';
 
-export class TaskObjectiveVo extends BaseValueObject<string> {
+export class TaskObjectiveVo extends BaseValueObject<string, 'TaskObjectiveVo'> {
+
+    protected readonly voType = 'TaskObjectiveVo' as const
 
     private constructor(value: string) {
         super(value)

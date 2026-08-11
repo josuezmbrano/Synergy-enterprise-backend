@@ -2,8 +2,9 @@ import { TaskErrorFactory } from 'core/errors/factories/task-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { ALLOWED_PRIORITY_OPTIONS, TASK_CONSTRAINTS } from '@project/common/constants/task.constants.js';
 
-export class TaskPriorityVo extends BaseValueObject<string> {
+export class TaskPriorityVo extends BaseValueObject<string, 'TaskPriorityVo'> {
 
+    protected readonly voType = 'TaskPriorityVo' as const
 
     public static readonly LOW = TASK_CONSTRAINTS.PRIORITY_ALLOWED_OPTIONS.LOW
     public static readonly MEDIUM = TASK_CONSTRAINTS.PRIORITY_ALLOWED_OPTIONS.MEDIUM

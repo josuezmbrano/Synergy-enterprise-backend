@@ -2,7 +2,9 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { USER_CONSTRAINTS } from '@project/common/constants/user.constants.js';
 
-export class UserUsernameVo extends BaseValueObject<string> {
+export class UserUsernameVo extends BaseValueObject<string, 'UserUsernameVo'> {
+
+    protected readonly voType = 'UserUsernameVo' as const
 
     private constructor(value: string) {
         super(value)
