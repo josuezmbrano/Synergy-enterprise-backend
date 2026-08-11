@@ -3,7 +3,7 @@ import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js'
 import { expectDomainError } from 'test/utils/test-errors.utils.js'
 
 
-class DummyIdentifierVo extends UniqueIdentifier {
+class DummyIdentifierVo extends UniqueIdentifier<'DummyIdentifierVo'> {
     public readonly identifierType = 'DummyIdentifierVo';
 
     public static create(): DummyIdentifierVo {

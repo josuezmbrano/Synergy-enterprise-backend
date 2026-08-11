@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from 'express'
 import { ENV } from 'infrastructure/config/env.js'
 import { getHttpStatusCode } from 'infrastructure/mapper.error.js'
 
-export const GlobalErrorMiddleware = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const GlobalErrorMiddleware = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
     if (err instanceof BaseDomainError) {
 

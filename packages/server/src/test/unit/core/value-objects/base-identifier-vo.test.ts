@@ -1,6 +1,6 @@
 import { BaseIdentifier } from 'core/value-objects/base.identifier.js';
 
-class UserIdentifierStub extends BaseIdentifier<string> {
+class UserIdentifierStub extends BaseIdentifier<string, 'UserIdentifierStub'> {
 
     public readonly identifierType = 'UserIdentifierStub';
 
@@ -8,7 +8,7 @@ class UserIdentifierStub extends BaseIdentifier<string> {
     static create(value: string) { return new UserIdentifierStub(value); }
 }
 
-class ProductIdentifierStub extends BaseIdentifier<string> {
+class ProductIdentifierStub extends BaseIdentifier<string, 'ProductIdentifierStub'> {
 
     public readonly identifierType = 'ProductIdentifierStub';
 
@@ -16,7 +16,7 @@ class ProductIdentifierStub extends BaseIdentifier<string> {
     static create(value: string) { return new ProductIdentifierStub(value); }
 }
 
-class NumberIdentifierStub extends BaseIdentifier<number> {
+class NumberIdentifierStub extends BaseIdentifier<number, 'NumberIdentifierStub'> {
 
     public readonly identifierType = 'NumberIdentifierStub';
 
@@ -24,7 +24,7 @@ class NumberIdentifierStub extends BaseIdentifier<number> {
     static create(value: number) { return new NumberIdentifierStub(value); }
 }
 
-class CompositeId extends BaseIdentifier<{s: number}> {
+class CompositeId extends BaseIdentifier<{s: number}, 'CompositeIdentifierStub'> {
 
     public readonly identifierType = 'CompositeIdentifierStub';
 
@@ -71,13 +71,15 @@ describe('BaseIdentifier Core Logic', () => {
             expect(id.equals(plainObject as any)).toBe(false);
         });
 
-        it('should return false if values are same but classes (types) are different', () => {
+        it('type error test if values are same but classes (types) are different', () => {
             const commonId = 'same-uuid';
             const userId = UserIdentifierStub.create(commonId);
             const productId = ProductIdentifierStub.create(commonId);
             
-            expect(userId.equals(productId)).toBe(false);
             expect(userId.constructor.name).not.toBe(productId.constructor.name);
+
+            // @ts-expect-error
+            userId.equals(productId)
         });
 
         it('should return false if values are different', () => {

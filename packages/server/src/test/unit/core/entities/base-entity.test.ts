@@ -86,7 +86,7 @@ describe('Base entitie core logic.', () => {
             expect(user1.equals(notBaseEntity as any)).toBe(false)
         })
 
-        it('should return false if values are the same but classes are different.', () => {
+        it('type error test if values are same but classes (types) are different', () => {
 
             const userIdVo = UserIdVo.fromId('a8b1c4e9-1234-4567-a890-9876543210ab')
 
@@ -100,8 +100,10 @@ describe('Base entitie core logic.', () => {
                 email: 'josuezambrano@gmail.com'
             }, userIdVo)
 
-            expect(user1.equals(user2)).toBe(false)
             expect(user1.constructor.name).not.toBe(user2.constructor.name)
+
+            // @ts-expect-error
+            user1.equals(user2)
         })
 
         it('should update updatedAt date when markAsUpdated is called', () => {

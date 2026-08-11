@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { MEMBER_CONSTRAINTS } from '../constants/member.constants.js'
 
 export const FindAllMembersSchema = z.object({
 

@@ -5,7 +5,7 @@ import { CommonErrorFactory } from 'core/errors/factories/common-factory.error.j
 
 // ZOD VALIDATOR THAT IMPLEMENTS A GENERIC T TYPE EXTENSION FROM ZODTYPE TO ONLY EXPECT ZOD SQUEMAS
 export const validateRequest = <T extends ZodType>(validateSchema: T) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
         try {
             // returns the exact type inferred from the schema
             const validatedBody = await validateSchema.parseAsync(req.body)

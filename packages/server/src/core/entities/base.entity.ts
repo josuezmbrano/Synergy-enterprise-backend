@@ -2,7 +2,7 @@ import { DateVo } from 'core/value-objects/common/date.vo.js';
 import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js';
 
 
-export abstract class BaseEntity <I extends UniqueIdentifier, T> {
+export abstract class BaseEntity <I extends UniqueIdentifier<string>, T> {
 
     protected readonly _id: I
     protected readonly _props: T

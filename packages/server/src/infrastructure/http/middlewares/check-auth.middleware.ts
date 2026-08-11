@@ -5,7 +5,7 @@ import type { Request, Response, NextFunction } from 'express-serve-static-core'
 export class CheckAuthMiddleware {
     constructor(private readonly authService: IAuthService) { }
 
-    execute = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    execute = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
 
         try {
 
