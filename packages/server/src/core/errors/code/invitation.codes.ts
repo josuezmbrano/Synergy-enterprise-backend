@@ -8,3 +8,4 @@ export const InvitationErrorCodes = {
 } as  const
 
 export type InvitationErrorCode = typeof InvitationErrorCodes[keyof typeof InvitationErrorCodes]
+export type InvitationErrorKeys = keyof typeof InvitationErrorCodes

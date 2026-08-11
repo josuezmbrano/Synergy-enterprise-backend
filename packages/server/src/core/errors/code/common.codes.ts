@@ -6,3 +6,4 @@ export const CommonErrorCodes = {
 } as const
 
 export type CommonErrorCode = typeof CommonErrorCodes[keyof typeof CommonErrorCodes]
+export type CommonErrorKeys = keyof typeof CommonErrorCodes

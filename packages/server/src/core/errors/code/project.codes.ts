@@ -25,3 +25,4 @@ export const ProjectErrorCodes = {
 } as const
 
 export type ProjectErrorCode = typeof ProjectErrorCodes[keyof typeof ProjectErrorCodes]
+export type ProjectErrorKeys = keyof typeof ProjectErrorCodes

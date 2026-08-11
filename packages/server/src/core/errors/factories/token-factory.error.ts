@@ -7,36 +7,36 @@ const reverseMap = createReverseMap(TokenErrorCodes)
 
 export const TokenErrorFactory = {
 
-    tokenNotFound: (metaData?: Record<string, unknown>): TokenDomainError => {
+    tokenNotFound: (metadata?: Record<string, unknown>): TokenDomainError => {
         const internalCode = TokenErrorCodes.TOKEN_NOT_FOUND
         const code = reverseMap(internalCode)
 
         return new TokenDomainError(
-            'Error: The provided verification token is invalid or has already been used.', internalCode, code, metaData)
+            'Error: The provided verification token is invalid or has already been used.', internalCode, code, metadata)
     },
 
-    tokenExpired: (metaData?: Record<string, unknown>): TokenDomainError => {
+    tokenExpired: (metadata?: Record<string, unknown>): TokenDomainError => {
         const internalCode = TokenErrorCodes.TOKEN_EXPIRED
         const code = reverseMap(internalCode)
 
         return new TokenDomainError(
-            'Error: The verification token has expired. Please request a new one to proceed.', internalCode, code, metaData)
+            'Error: The verification token has expired. Please request a new one to proceed.', internalCode, code, metadata)
     },
 
-    tokenInvalidType: (metaData?: Record<string, unknown>): TokenDomainError => {
+    tokenInvalidType: (metadata?: Record<string, unknown>): TokenDomainError => {
         const internalCode = TokenErrorCodes.TOKEN_INVALID_TYPE
         const code = reverseMap(internalCode)
 
         return new TokenDomainError(
-            'Error: This token is not valid for the requested operation.', internalCode, code, metaData)
+            'Error: This token is not valid for the requested operation.', internalCode, code, metadata)
     },
 
-    tokenCooldownLimit: (metaData?: Record<string, unknown>): TokenDomainError => {
+    tokenCooldownLimit: (metadata?: Record<string, unknown>): TokenDomainError => {
         const internalCode = TokenErrorCodes.TOKEN_COOLDOWN_LIMIT
         const code = reverseMap(internalCode)
 
         return new TokenDomainError(
-            'Error: Too many requests. Please wait 60 seconds before trying again.', internalCode, code, metaData)
+            'Error: Too many requests. Please wait 60 seconds before trying again.', internalCode, code, metadata)
     }
 
 }

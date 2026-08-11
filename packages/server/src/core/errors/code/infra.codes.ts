@@ -5,3 +5,4 @@ export const InfraErrorCodes = {
  } as const
 
 export type InfraErrorCode = typeof InfraErrorCodes[keyof typeof InfraErrorCodes]
+export type InfraErrorKeys = keyof typeof InfraErrorCodes

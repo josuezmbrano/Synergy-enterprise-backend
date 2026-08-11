@@ -7,20 +7,20 @@ const reverseMap = createReverseMap(AuthErrorCodes)
 
 export const AuthErrorFactory = {
 
-    invalidCredentials: (metaData?: Record<string, unknown>): AuthDomainError => {
+    invalidCredentials: (metadata?: Record<string, unknown>): AuthDomainError => {
         const internalCode = AuthErrorCodes.AUTH_INVALID_CREDENTIALS
         const code = reverseMap(internalCode)
 
         return new AuthDomainError(
-            'Error: Invalid credentials provided. Please check your credentials and try again.', internalCode, code, metaData)
+            'Error: Invalid credentials provided. Please check your credentials and try again.', internalCode, code, metadata)
     },
 
-    invalidOrExpiredToken: (metaData?: Record<string, unknown>): AuthDomainError => {
+    invalidOrExpiredToken: (metadata?: Record<string, unknown>): AuthDomainError => {
         const internalCode = AuthErrorCodes.AUTH_INVALID_OR_EXPIRED_TOKEN
         const code = reverseMap(internalCode)
 
         return new AuthDomainError(
-            'Error: Invalid or expired session. Please log in again.', internalCode, code, metaData)
+            'Error: Invalid or expired session. Please log in again.', internalCode, code, metadata)
     }
 
 }

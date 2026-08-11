@@ -6,27 +6,27 @@ const reverseMap = createReverseMap(InfraErrorCodes)
 
 export const InfraErrorFactory = {
 
-    mappingError: (context: string, details: string, metaData?: Record<string, unknown>) => {
+    mappingError: (context: string, details: string, metadata?: Record<string, unknown>) => {
         const internalCode = InfraErrorCodes.INFRASTRUCTURE_MAPPING_ERROR
         const code = reverseMap(internalCode)
         return new InfraDomainError(
-            `Error transforming data in:  [${context}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_MAPPING_ERROR, code, metaData 
+            `Error transforming data in:  [${context}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_MAPPING_ERROR, code, metadata 
         )
     },
 
-    persistenceError: (context: string, details: string, metaData?: Record<string, unknown>) => {
+    persistenceError: (context: string, details: string, metadata?: Record<string, unknown>) => {
         const internalCode = InfraErrorCodes.INFRASTRUCTURE_PERSISTENCE_ERROR
         const code = reverseMap(internalCode)
         return new InfraDomainError(
-            `Persistence error during: [${context}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_PERSISTENCE_ERROR, code, metaData 
+            `Persistence error during: [${context}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_PERSISTENCE_ERROR, code, metadata 
         )
     },
 
-    connectionError: (service: string, details: string, metaData?: Record<string, unknown>) => {
+    connectionError: (service: string, details: string, metadata?: Record<string, unknown>) => {
         const internalCode = InfraErrorCodes.INFRASTRUCTURE_CONNECTION_ERROR
         const code = reverseMap(internalCode)
         return new InfraDomainError(
-            `Connection failed with [${service}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_CONNECTION_ERROR, code, metaData 
+            `Connection failed with [${service}]: ${details}`, InfraErrorCodes.INFRASTRUCTURE_CONNECTION_ERROR, code, metadata 
         )
     }
 }

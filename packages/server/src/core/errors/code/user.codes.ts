@@ -17,3 +17,4 @@ export const UserErrorCodes = {
 } as const
 
 export type UserErrorCode = typeof UserErrorCodes[keyof typeof UserErrorCodes]
+export type UserErrorKeys = keyof typeof UserErrorCodes

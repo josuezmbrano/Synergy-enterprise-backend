@@ -6,28 +6,28 @@ const reverseMap = createReverseMap(CommonErrorCodes)
 
 export const CommonErrorFactory = {
 
-    commonValidationFailed: (message: string, metaData?: Record<string, unknown>): CommonDomainError => {
+    commonValidationFailed: (message: string, metadata?: Record<string, unknown>): CommonDomainError => {
         const internalCode = CommonErrorCodes.COMMON_VALIDATION_FAILED
         const code = reverseMap(internalCode)
 
         return new CommonDomainError(
-            message, internalCode, code, metaData)
+            message, internalCode, code, metadata)
     },
 
-    commonDataInconsistency: (message: string, metaData?: Record<string, unknown>): CommonDomainError => {
+    commonDataInconsistency: (message: string, metadata?: Record<string, unknown>): CommonDomainError => {
         const internalCode = CommonErrorCodes.COMMON_DATA_INCONSISTENCY
         const code = reverseMap(internalCode)
 
         return new CommonDomainError(
-            message, internalCode, code, metaData)
+            message, internalCode, code, metadata)
     },
 
-    commonInvalidInputPayload: (metaData?: Record<string, unknown>): CommonDomainError => {
+    commonInvalidInputPayload: (metadata?: Record<string, unknown>): CommonDomainError => {
         const internalCode = CommonErrorCodes.COMMON_INVALID_INPUT_PAYLOAD
         const code = reverseMap(internalCode)
 
         return new CommonDomainError(
-            'Error: Invalid request payload', internalCode, code, metaData
+            'Error: Invalid request payload', internalCode, code, metadata
         )
     }
 

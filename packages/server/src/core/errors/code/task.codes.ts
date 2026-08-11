@@ -19,3 +19,4 @@ export const TaskErrorCodes = {
 } as const
 
 export type TaskErrorCode = typeof TaskErrorCodes[keyof typeof TaskErrorCodes]
+export type TaskErrorKeys = keyof typeof TaskErrorCodes

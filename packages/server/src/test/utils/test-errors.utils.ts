@@ -1,6 +1,6 @@
 import { BaseDomainError } from 'core/errors/base-domain.error.js'
 
-export interface ErrorMetaData {
+export interface ErrorMetadata {
     field: string
     reason: string
     constraint: string
@@ -19,7 +19,7 @@ export const expectDomainError = <T extends BaseDomainError>(
     } catch (error) {
 
         if (error instanceof BaseDomainError) {
-            const meta = error.metaData as ErrorMetaData | undefined
+            const meta = error.metadata as ErrorMetadata | undefined
 
             expect(error).toBeInstanceOf(errorClass)
             

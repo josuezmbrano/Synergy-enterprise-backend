@@ -19,3 +19,4 @@ export const MemberErrorCodes = {
 } as const
 
 export type MemberErrorCode = typeof MemberErrorCodes[keyof typeof MemberErrorCodes]
+export type MemberErrorKeys = keyof typeof MemberErrorCodes

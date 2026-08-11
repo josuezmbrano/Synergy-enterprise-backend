@@ -1,20 +1,20 @@
 import { BaseDomainError } from '../base-domain.error.js';
-import { AuthErrorCode } from '../code/auth.codes.js';
-import { CommonErrorCode } from '../code/common.codes.js';
-import { InfraErrorCode } from '../code/infra.codes.js';
-import { InvitationErrorCode } from '../code/invitation.codes.js';
-import { MemberErrorCode } from '../code/member.codes.js';
-import { ProjectErrorCode } from '../code/project.codes.js';
-import { TaskErrorCode } from '../code/task.codes.js';
-import { TokenErrorCode } from '../code/token.codes.js';
-import { UserErrorCode } from '../code/user.codes.js';
+import { AuthErrorCode, AuthErrorKeys } from '../code/auth.codes.js';
+import { CommonErrorCode, CommonErrorKeys } from '../code/common.codes.js';
+import { InfraErrorCode, InfraErrorKeys } from '../code/infra.codes.js';
+import { InvitationErrorCode, InvitationErrorKeys } from '../code/invitation.codes.js';
+import { MemberErrorCode, MemberErrorKeys } from '../code/member.codes.js';
+import { ProjectErrorCode, ProjectErrorKeys } from '../code/project.codes.js';
+import { TaskErrorCode, TaskErrorKeys } from '../code/task.codes.js';
+import { TokenErrorCode, TokenErrorKeys } from '../code/token.codes.js';
+import { UserErrorCode, UserErrorKeys } from '../code/user.codes.js';
 
 export class ProjectDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: ProjectErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: ProjectErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -22,7 +22,7 @@ export class ProjectDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -31,8 +31,8 @@ export class TaskDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: TaskErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: TaskErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -40,7 +40,7 @@ export class TaskDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -49,8 +49,8 @@ export class MemberDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: MemberErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: MemberErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -58,7 +58,7 @@ export class MemberDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -67,8 +67,8 @@ export class UserDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: UserErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: UserErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -76,7 +76,7 @@ export class UserDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -85,8 +85,8 @@ export class AuthDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: AuthErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: AuthErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -94,7 +94,7 @@ export class AuthDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -103,8 +103,8 @@ export class CommonDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: CommonErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: CommonErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -112,7 +112,7 @@ export class CommonDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -121,8 +121,8 @@ export class TokenDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: TokenErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: TokenErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -130,7 +130,7 @@ export class TokenDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -139,8 +139,8 @@ export class InvitationDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: InvitationErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: InvitationErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -148,7 +148,7 @@ export class InvitationDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }
@@ -157,8 +157,8 @@ export class InfraDomainError extends BaseDomainError {
     constructor(
         message: string,
         internalCode: InfraErrorCode,
-        errorKey: string,
-        metaData?: Record<string, unknown>
+        errorKey: InfraErrorKeys | 'UNKNOWN_DOMAIN_ERROR',
+        metadata?: Record<string, unknown>
     ) {
         super(
             message,
@@ -166,7 +166,7 @@ export class InfraDomainError extends BaseDomainError {
             internalCode,
             errorKey,
             true,
-            metaData
+            metadata
         )
     }
 }

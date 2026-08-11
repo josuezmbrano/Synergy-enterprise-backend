@@ -1,27 +1,27 @@
 import { ENV } from 'infrastructure/config/env.js'
 import { DomainNames } from 'infrastructure/mapper.error.js'
 
-interface ErrorMetaData {
+interface ErrorMetadata {
     [key: string]: unknown
 }
 
-export class BaseDomainError extends Error {
+export abstract class BaseDomainError extends Error {
 
     readonly name: string
-    readonly date: string
+    readonly occurredAt: string
 
     protected constructor(
-        public readonly message: string,
+        message: string,
         public readonly errorType: DomainNames,
         public readonly internalCode: string,
         public readonly code: string,
         public readonly isOperational: boolean,
-        public readonly metaData?: ErrorMetaData
+        public readonly metadata?: ErrorMetadata
     ) {
         super(message)
 
         this.name = this.constructor.name
-        this.date = new Date().toISOString()
+        this.occurredAt = new Date().toISOString()
 
         Object.setPrototypeOf(this, new.target.prototype)
 
@@ -33,12 +33,12 @@ export class BaseDomainError extends Error {
     toJSON() {
         return {
             name: this.name,
-            date: this.date,
+            occurredAt: this.occurredAt,
             message: this.message,
             errorType: this.errorType,
             internalCode: this.internalCode,
             code: this.code,
-            ...(this.metaData && {metaData: this.metaData}),
+            ...(this.metadata && {metaData: this.metadata}),
             isOperational: this.isOperational,
             ...(ENV.NODE_ENV === 'development' && {stack: this.stack})
         }

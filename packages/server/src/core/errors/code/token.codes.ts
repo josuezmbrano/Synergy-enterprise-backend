@@ -6,3 +6,4 @@ export const TokenErrorCodes = {
 } as const
 
 export type TokenErrorCode = typeof TokenErrorCodes[keyof typeof TokenErrorCodes]
+export type TokenErrorKeys = keyof typeof TokenErrorCodes

@@ -4,3 +4,4 @@ export const AuthErrorCodes = {
 } as const
 
 export type AuthErrorCode = typeof AuthErrorCodes[keyof typeof AuthErrorCodes]
+export type AuthErrorKeys = keyof typeof AuthErrorCodes
