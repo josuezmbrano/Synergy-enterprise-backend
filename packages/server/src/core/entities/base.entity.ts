@@ -5,7 +5,7 @@ import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js';
 export abstract class BaseEntity <I extends UniqueIdentifier<string>, T> {
 
     protected readonly _id: I
-    protected readonly _props: T
+    protected _props: T
     protected readonly createdAt: DateVo
     protected updatedAt: DateVo
 

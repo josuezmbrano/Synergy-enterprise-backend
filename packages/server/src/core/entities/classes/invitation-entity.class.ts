@@ -14,7 +14,7 @@ import { MemberRoleOptions } from '@project/common/constants/member.constants.js
 
 export class InvitationEntityClass extends BaseEntity<InvitationIdVo, InvitationProps> {
 
-    private constructor(props: InvitationProps, id: InvitationIdVo, createdAt?: DateVo, updatedAt?: DateVo) {
+    private constructor(id: InvitationIdVo, props: InvitationProps, createdAt?: DateVo, updatedAt?: DateVo) {
         super(id, props, createdAt, updatedAt)
     }
 
@@ -22,11 +22,11 @@ export class InvitationEntityClass extends BaseEntity<InvitationIdVo, Invitation
     // MAIN METHODS
     public static create(props: InvitationProps, id?: InvitationIdVo): InvitationEntityClass {
         const finalId = id ? id : InvitationIdVo.create()
-        return new InvitationEntityClass({ ...props }, finalId)
+        return new InvitationEntityClass(finalId, { ...props },)
     }
 
     public static reconstitute(props: InvitationProps, id: InvitationIdVo, createdAt: DateVo, updatedAt: DateVo): InvitationEntityClass {
-        return new InvitationEntityClass({ ...props }, id, createdAt, updatedAt)
+        return new InvitationEntityClass(id, { ...props }, createdAt, updatedAt)
     }
 
     // GETTERS

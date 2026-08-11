@@ -14,7 +14,7 @@ export class ProjectEntityClass extends BaseEntity<ProjectIdVo, ProjectProps> {
 
     private readonly _ownerPublicId?: UserIdVo
 
-    private constructor(props: ProjectProps, id: ProjectIdVo, createdAt?: DateVo, updatedAt?: DateVo, ownerPublicId?: UserIdVo) {
+    private constructor(id: ProjectIdVo, props: ProjectProps, createdAt?: DateVo, updatedAt?: DateVo, ownerPublicId?: UserIdVo) {
         super(id, props, createdAt, updatedAt)
         this._ownerPublicId = ownerPublicId
         this.ensureInvariants()
@@ -25,11 +25,11 @@ export class ProjectEntityClass extends BaseEntity<ProjectIdVo, ProjectProps> {
 
     public static create(props: ProjectProps, id?: ProjectIdVo): ProjectEntityClass {
         const finalId = id ? id : ProjectIdVo.create()
-        return new ProjectEntityClass({ ...props }, finalId)
+        return new ProjectEntityClass(finalId, { ...props })
     }
 
     public static reconstitute(props: ProjectProps, id: ProjectIdVo, createdAt: DateVo, updatedAt: DateVo, ownerPublicId: UserIdVo): ProjectEntityClass {
-        return new ProjectEntityClass({ ...props }, id, createdAt, updatedAt, ownerPublicId)
+        return new ProjectEntityClass(id, { ...props }, createdAt, updatedAt, ownerPublicId)
     }
 
     public get ownerPublicId(): UserIdVo | undefined {

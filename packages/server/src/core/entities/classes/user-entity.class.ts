@@ -13,7 +13,7 @@ import { UserStatusOptions } from '@project/common/constants/user.constants.js';
 
 export class UserEntityClass extends BaseEntity<UserIdVo, UserProps> {
 
-    private constructor(props: UserProps, id: UserIdVo, createdAt?: DateVo, updatedAt?: DateVo) {
+    private constructor(id: UserIdVo, props: UserProps, createdAt?: DateVo, updatedAt?: DateVo) {
         super(id, props, createdAt, updatedAt)
     }
 
@@ -23,11 +23,11 @@ export class UserEntityClass extends BaseEntity<UserIdVo, UserProps> {
     public static create(props: UserProps, id?: UserIdVo): UserEntityClass {
 
         const finalId = id ? id : UserIdVo.create()
-        return new UserEntityClass({ ...props }, finalId)
+        return new UserEntityClass(finalId, { ...props })
     }
 
     public static reconstitute(props: UserProps, id: UserIdVo, createdAt: DateVo, updatedAt: DateVo): UserEntityClass {
-        return new UserEntityClass({ ...props }, id, createdAt, updatedAt)
+        return new UserEntityClass(id, { ...props }, createdAt, updatedAt)
     }
 
 

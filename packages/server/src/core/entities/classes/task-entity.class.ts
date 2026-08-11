@@ -17,7 +17,7 @@ export class TaskEntityClass extends BaseEntity<TaskIdVo, TaskProps> {
     private readonly _assignedToPublicId?: MemberIdVo
     private readonly _creatorPublicId?: MemberIdVo
 
-    private constructor(props: TaskProps, id: TaskIdVo, createdAt?: DateVo, updatedAt?: DateVo, assignedToPublicId?: MemberIdVo, creatorPublicId?: MemberIdVo) {
+    private constructor(id: TaskIdVo, props: TaskProps, createdAt?: DateVo, updatedAt?: DateVo, assignedToPublicId?: MemberIdVo, creatorPublicId?: MemberIdVo) {
         super(id, props, createdAt, updatedAt)
         this._assignedToPublicId = assignedToPublicId
         this._creatorPublicId = creatorPublicId
@@ -29,11 +29,11 @@ export class TaskEntityClass extends BaseEntity<TaskIdVo, TaskProps> {
 
         const finalId = id ? id : TaskIdVo.create()
 
-        return new TaskEntityClass({ ...props }, finalId)
+        return new TaskEntityClass(finalId, { ...props })
     }
 
     public static reconstitute(props: TaskProps, id: TaskIdVo, createdAt: DateVo, updatedAt: DateVo, assignedToPublicId?: MemberIdVo, creatorPublicId?: MemberIdVo): TaskEntityClass {
-        return new TaskEntityClass({ ...props }, id, createdAt, updatedAt, assignedToPublicId, creatorPublicId)
+        return new TaskEntityClass(id, { ...props }, createdAt, updatedAt, assignedToPublicId, creatorPublicId)
     }
 
 

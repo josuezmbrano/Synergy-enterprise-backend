@@ -14,7 +14,7 @@ export class MemberEntityClass extends BaseEntity<MemberIdVo, MemberProps> {
 
     private readonly _userPublicId?: UserIdVo
 
-    private constructor(props: MemberProps, id: MemberIdVo, createdAt?: DateVo, updatedAt?: DateVo, userPublicId?: UserIdVo) {
+    private constructor(id: MemberIdVo, props: MemberProps, createdAt?: DateVo, updatedAt?: DateVo, userPublicId?: UserIdVo) {
         super(id, props, createdAt, updatedAt)
         this._userPublicId = userPublicId
     }
@@ -25,11 +25,11 @@ export class MemberEntityClass extends BaseEntity<MemberIdVo, MemberProps> {
     public static create(props: MemberProps, id?: MemberIdVo): MemberEntityClass {
 
         const finalId = id ? id : MemberIdVo.create()
-        return new MemberEntityClass({ ...props }, finalId)
+        return new MemberEntityClass(finalId, { ...props })
     }
 
     public static reconstitute(props: MemberProps, id: MemberIdVo, createdAt: DateVo, updatedAt: DateVo, userPublicId?: UserIdVo): MemberEntityClass {
-        return new MemberEntityClass({ ...props }, id, createdAt, updatedAt, userPublicId)
+        return new MemberEntityClass(id, { ...props }, createdAt, updatedAt, userPublicId)
     }
 
     public get userPublicId(): UserIdVo | undefined {
