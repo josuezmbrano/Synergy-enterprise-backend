@@ -12,7 +12,7 @@
 
 A production-grade RESTful API built with **TypeScript**, **Node.js**, and **Express**, adhering to **Clean Architecture** and **Domain-Driven Design (DDD)** principles. Engineered with strict type safety, manual Dependency Injection (Composition Root), transactional Unit of Work pattern, and comprehensive integration testing.
 
-> 📖 **Deep Dive:** For an exhaustive breakdown of architectural patterns, structural typing prevention, and ADRs (Architectural Decision Records), please refer to the [ARCHITECTURE.md](./ARCHITECTURE.md).
+> 📖 **Deep Dive:** For an exhaustive breakdown of architectural patterns, structural typing prevention, and ADRs (Architectural Decision Records), please refer to the [ARCHITECTURE.md](./ARCHITECTURE.us.md).
 
 ## 📐 Architecture Overview
 

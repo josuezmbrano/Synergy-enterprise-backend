@@ -12,7 +12,7 @@
 
 Una API RESTful de grado de producción construida con **TypeScript**, **Node.js** y **Express**, adhiriéndose estrictamente a los principios de **Clean Architecture** y **Domain-Driven Design (DDD)**. Diseñada con type-safety extremo, Inyección de Dependencias manual (Composition Root), patrón transaccional Unit of Work y pruebas de integración exhaustivas.
 
-> 📖 **Documentación Profunda:** Para un análisis detallado de las decisiones arquitectónicas, prevención de tipado estructural y ADRs (Architectural Decision Records), por favor revisa el archivo [ARCHITECTURE.md](./ARCHITECTURE.es.md).
+> 📖 **Documentación Profunda:** Para un análisis detallado de las decisiones arquitectónicas, prevención de tipado estructural y ADRs (Architectural Decision Records), por favor revisa el archivo [ARCHITECTURE.es.md](./ARCHITECTURE.es.md).
 
 ## 📐 Visión General de la Arquitectura
 

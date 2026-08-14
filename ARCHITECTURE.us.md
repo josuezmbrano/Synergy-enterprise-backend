@@ -1,7 +1,7 @@
 # ARCHITECTURE.md
 
 # 🏢 Synergy Enterprise Backend — Project & Task Management API
-> 🇪🇸 **Español:** [Lee la versión en español de la arquitectura aquí](./docs/ARCHITECTURE.md)
+> 🇪🇸 **Español:** [Lee la versión en español de la arquitectura aquí](./docs/ARCHITECTURE.es.md)
 
 ## 1. EXECUTIVE SUMMARY & ARCHITECTURAL INTENT
 
