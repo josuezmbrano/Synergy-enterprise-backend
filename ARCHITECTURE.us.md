@@ -1,4 +1,4 @@
-# ARCHITECTURE.md
+### 🇺🇸 English Version (`ARCHITECTURE.us.md`)
 
 # 🏢 Synergy Enterprise Backend — Project & Task Management API
 > 🇪🇸 **Español:** [Lee la versión en español de la arquitectura aquí](./docs/ARCHITECTURE.es.md)
