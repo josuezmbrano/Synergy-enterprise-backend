@@ -38,7 +38,7 @@ El sistema respeta estrictamente los límites concéntricos de **Clean Architect
 │   └─────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
                             ▲                      ▲
-                            └─────── HACIA ADENTRO ┘
+                            └──── HACIA ADENTRO ───┘
                             (Dirección de Dependencias)
 ```
 
