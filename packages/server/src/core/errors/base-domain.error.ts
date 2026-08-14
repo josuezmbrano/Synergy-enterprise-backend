@@ -38,7 +38,7 @@ export abstract class BaseDomainError extends Error {
             errorType: this.errorType,
             internalCode: this.internalCode,
             code: this.code,
-            ...(this.metadata && {metaData: this.metadata}),
+            ...(this.metadata && {metadata: this.metadata}),
             isOperational: this.isOperational,
             ...(ENV.NODE_ENV === 'development' && {stack: this.stack})
         }
