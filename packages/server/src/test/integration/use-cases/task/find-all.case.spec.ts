@@ -51,7 +51,7 @@ describe('FindAllTasksCase - Integration Tests', () => {
                 projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1'
             });
 
-            await expect(expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message));
+            await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
         });
 
         it('should obfuscate error and throw projectNotFound if the actor is NOT a member of the project', async () => {

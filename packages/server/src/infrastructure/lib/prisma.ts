@@ -2,7 +2,7 @@ import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PoolConfig, neonConfig } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import WebSocket from 'ws';
-import { ENV } from 'infrastructure/config/env.js';
+import { env } from 'infrastructure/config/env.config.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 neonConfig.webSocketConstructor = WebSocket
@@ -12,7 +12,7 @@ const prismaClientSingleton = () => {
 
 
     // NATIVE TCP FOR TESTCONTAINERS LOCAL CONNECTION
-    if (process.env.NODE_ENV === 'test') {
+    if (env.NODE_ENV === 'test') {
         const testUrl = process.env.DATABASE_URL
 
         if (!testUrl) throw new Error('FATAL: DATABASE_URL is missing in test environment')
@@ -36,13 +36,7 @@ const prismaClientSingleton = () => {
 
     // PRODUCTION / DEVELOPMENT NEON SERVERLESS CONNECTION
     neonConfig.webSocketConstructor = WebSocket;
-    const connectionStringUrl = ENV.DATABASE_URL;
-
-    if (!connectionStringUrl) {
-        const error = new Error('FATAL: DATABASE_URL is missing in environment variables');
-        error.name = 'ConfigurationError';
-        throw error;
-    }
+    const connectionStringUrl = env.DATABASE_URL;
 
     const config: PoolConfig = {
         connectionString: connectionStringUrl,
@@ -63,6 +57,6 @@ const globalForPrisma = globalThis as unknown as {
 
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default prisma

@@ -1,4 +1,4 @@
-type AllowedEnvironmentConfig = 'production' | 'development'
+import { env } from "infrastructure/config/env.config.js"
 
 export interface ResendConfig {
     apiKey: string,
@@ -7,26 +7,10 @@ export interface ResendConfig {
 }
 
 
-const resendInternalConfigLibrary: Record<AllowedEnvironmentConfig, ResendConfig> = {
-    production: {
-        apiKey: process.env.RESEND_API_KEY || '',
-        from: 'Verified real domain',
-    },
-    development: {
-        apiKey: process.env.RESEND_API_KEY || '',
-        from: 'Acme <onboarding@resend.dev>',
-        overridesTo: process.env.DEV_PERSONAL_EMAIL
-    }
-}
+const isProduction = env.NODE_ENV === 'production'
 
-export const getResendConfig = (): ResendConfig => {
-    const actualEnvironment = process.env.NODE_ENV || 'development'
-
-    const config = resendInternalConfigLibrary[actualEnvironment as AllowedEnvironmentConfig]
-
-    if ((actualEnvironment === 'production' || actualEnvironment === 'development') && !config.apiKey) {
-        throw new Error('Critical: RESEND_API_KEY env variable is missing in environment.')
-    }
-
-    return config
-}
+export const resendConfig: ResendConfig = Object.freeze({
+    apiKey: env.RESEND_API_KEY,
+    from: isProduction ? 'Synergy <no-reply@tudominio.com>' : 'Acme <onboarding@resend.dev>',
+    ...(env.NODE_ENV === 'development' && { overridesTo: env.DEV_PERSONAL_EMAIL })
+})

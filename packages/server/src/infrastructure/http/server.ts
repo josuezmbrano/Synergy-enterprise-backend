@@ -1,4 +1,4 @@
-import { getServerConfig, ServerPortConfig } from 'infrastructure/config/server.config.js'
+import { env } from 'infrastructure/config/env.config.js'
 import { app } from './app.js'
 import type { Express } from 'express-serve-static-core'
 
@@ -6,47 +6,36 @@ import type { Express } from 'express-serve-static-core'
 class StartServer {
 
     private readonly expressApp: Express
-    private readonly config: ServerPortConfig
-    private realPort: string | number
+    private realPort: number
 
-    constructor(config: ServerPortConfig) {
+    constructor(port: number) {
         this.expressApp = app
-        this.config = config
-        this.realPort = config.port
+        this.realPort = port
     }
-
-
-    private getConfig(): ServerPortConfig {
-        return this.config
-    }
-
 
     public start(): void {
-        try {
+        const server = this.expressApp.listen(this.realPort, () => {
+            // EXTRACT THE CORRECT PORT ADDRESS INFO IN CASE WE ARE LISTENING
+            // TO THE OPEN PORT ASSIGNMENT (0) ON TEST ENVIRONMENT
+            const address = server.address()
 
-            const server = this.expressApp.listen(this.getConfig().port, () => {
-                // EXTRACT THE CORRECT PORT ADDRESS INFO IN CASE WE ARE LISTENING
-                // TO THE OPEN PORT ASSIGNMENT (0) ON TEST ENVIRONMENT
-                const address = server.address()
-                const actualPort = typeof address === 'string' ? address : address?.port;
-                this.realPort = actualPort || this.getConfig().port
-                
-                console.log(`🚀 Secure HTTP server running on http://localhost:${actualPort || this.getConfig().port}`)
-            })
+            if (address && typeof address === 'object') this.realPort = address.port
 
-        } catch (error) {
+            console.log(`🚀 Secure HTTP server running on http://localhost:${this.realPort}`)
+        })
 
+        server.on('error', (error) => {
             console.error('Critical error while initiating server:', error)
             process.exit(1)
-        }
+        })
     }
 
-    public get actualPort(): string | number {
+    public get actualPort(): number {
         return this.realPort
     }
 
 }
 
-const server = new StartServer(getServerConfig())
+const server = new StartServer(env.PORT)
 server.start()
 

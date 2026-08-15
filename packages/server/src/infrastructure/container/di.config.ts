@@ -8,13 +8,14 @@ import { PrismaUnitOfWork } from 'infrastructure/persistence/prisma/prisma-unit-
 import { BcryptPasswordHasher } from 'infrastructure/services/bcrypt/bcrypt-password-hasher.service.js';
 import { saltRounds } from 'infrastructure/services/bcrypt/salt-rounds.config.js';
 import { JwtAuth } from 'infrastructure/services/jwt/jwt-auth.service.js';
-import { getJwtInternalConfig } from 'infrastructure/services/jwt/jwt-config.js';
+import { jwtInternalConfig } from 'infrastructure/services/jwt/jwt-config.js';
 import { ResendMailService } from 'infrastructure/services/resend/resend-mail.service.js';
-import { getResendConfig } from 'infrastructure/services/resend/resend-config.js';
+import { resendConfig } from 'infrastructure/services/resend/resend-config.js';
 import { NodemailService } from 'infrastructure/services/nodemailer/nodemailer-testing.service.js';
-import { getNodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-testing.config.js';
+import { nodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-testing.config.js';
 import { CheckAuthMiddleware } from 'infrastructure/http/middlewares/check-auth.middleware.js';
 import { PrismaInvitationRepository } from 'infrastructure/repositories/invitation.prisma.js';
+import { env } from 'infrastructure/config/env.config.js';
 
 
 // INFRASTRUCTURE REPOSITORY INSTANCES
@@ -31,9 +32,9 @@ const unitOfWork = new PrismaUnitOfWork(prisma)
 
 
 // INFRASTRUCTURE SERVICE INSTANCES
-const bcryptPasswordHasher = new BcryptPasswordHasher(saltRounds())
-const jwtAuthService = new JwtAuth(getJwtInternalConfig())
-const mailService = process.env.NODE_ENV === 'test' ? new NodemailService(getNodemailerConfig()) : new ResendMailService(getResendConfig())
+const bcryptPasswordHasher = new BcryptPasswordHasher(saltRounds)
+const jwtAuthService = new JwtAuth(jwtInternalConfig)
+const mailService = env.NODE_ENV === 'test' ? new NodemailService(nodemailerConfig) : new ResendMailService(resendConfig)
 
 
 // INFRASTRUCTURE MIDDLEWARE INSTANCES

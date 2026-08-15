@@ -1,6 +1,6 @@
 import { BaseDomainError } from 'core/errors/base-domain.error.js'
 import type { Request, Response, NextFunction } from 'express'
-import { ENV } from 'infrastructure/config/env.js'
+import { env } from 'infrastructure/config/env.config.js'
 import { getHttpStatusCode } from 'infrastructure/mapper.error.js'
 
 export const GlobalErrorMiddleware = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
@@ -23,7 +23,7 @@ export const GlobalErrorMiddleware = (err: Error, _req: Request, res: Response, 
 
     return res.status(500).json({
         status: 'error',
-        error: ENV.NODE_ENV === 'production' ? 'Internal server error' : { message: err.message, stack: err.stack }
+        error: env.NODE_ENV === 'production' ? 'Internal server error' : { message: err.message, stack: err.stack }
     })
 
 }

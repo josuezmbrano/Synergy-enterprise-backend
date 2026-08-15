@@ -1,5 +1,5 @@
 import prisma from 'infrastructure/lib/prisma.js';
-import { getNodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-testing.config.js';
+import { nodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-testing.config.js';
 import { NodemailService } from 'infrastructure/services/nodemailer/nodemailer-testing.service.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 
@@ -24,7 +24,7 @@ describe('Integration test - Database connection', () => {
     it('should send an email through SMTP and capture it inside Mailpit container via HTTP API.', async () => {
         console.log('\n🐳 [Test-Mailpit] Initializing NodemailService with dynamic config...');
 
-        const mailService = new NodemailService(getNodemailerConfig());
+        const mailService = new NodemailService(nodemailerConfig);
 
         const testEmailInput = {
             to: 'test-vanguard@synergy.com',

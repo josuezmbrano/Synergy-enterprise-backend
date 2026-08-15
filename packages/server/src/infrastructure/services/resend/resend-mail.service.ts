@@ -14,17 +14,13 @@ export class ResendMailService implements IMailService {
         this.client = new Resend(config.apiKey)
     }
 
-    private getConfig(): ResendConfig {
-        return this.resendConfig
-    }
-
 
     async sendEmail(input: SendEmailInput): Promise<void> {
-        const forwardToEmail = this.getConfig().overridesTo ?? input.to
+        const forwardToEmail = this.resendConfig.overridesTo ?? input.to
 
         try {
             await this.client.emails.send({
-                from: this.getConfig().from,
+                from: this.resendConfig.from,
                 to: forwardToEmail,
                 subject: input.subject,
                 text: input.body

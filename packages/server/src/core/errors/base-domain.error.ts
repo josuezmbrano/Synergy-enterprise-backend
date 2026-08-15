@@ -1,4 +1,4 @@
-import { ENV } from 'infrastructure/config/env.js'
+import { env } from 'infrastructure/config/env.config.js'
 import { DomainNames } from 'infrastructure/mapper.error.js'
 
 interface ErrorMetadata {
@@ -25,11 +25,11 @@ export abstract class BaseDomainError extends Error {
 
         Object.setPrototypeOf(this, new.target.prototype)
 
-        if(Error.captureStackTrace) {
+        if (Error.captureStackTrace) {
             Error.captureStackTrace(this, this.constructor)
         }
     }
-    
+
     toJSON() {
         return {
             name: this.name,
@@ -38,9 +38,9 @@ export abstract class BaseDomainError extends Error {
             errorType: this.errorType,
             internalCode: this.internalCode,
             code: this.code,
-            ...(this.metadata && {metadata: this.metadata}),
+            ...(this.metadata && { metadata: this.metadata }),
             isOperational: this.isOperational,
-            ...(ENV.NODE_ENV === 'development' && {stack: this.stack})
+            ...(env.NODE_ENV === 'development' && { stack: this.stack })
         }
     }
 

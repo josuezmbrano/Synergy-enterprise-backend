@@ -1,7 +1,7 @@
 import { RegisterUserInput } from '@project/common/schemas/user.schema.js';
 import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js';
 import { NextFunction, Request, Response } from 'express';
-import { getCookieConfig } from 'infrastructure/config/cookie.config.js';
+import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
 
 
 export class RegisterUserController {
@@ -18,8 +18,7 @@ export class RegisterUserController {
 
             
             // Retrieve config and set http only cookies configuration
-            const cookieOptions = getCookieConfig()
-            res.cookie('token', jwtToken, cookieOptions)
+            res.cookie('token', jwtToken, cookieConfig)
 
             res.status(201).json({
                 status: 'success',

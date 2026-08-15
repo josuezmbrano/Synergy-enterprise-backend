@@ -1,7 +1,7 @@
 import { LoginUserInput } from '@project/common/schemas/user.schema.js';
 import { LoginUserCase } from 'application/use-cases/user/login-user.usecase.js';
 import type { Request, Response, NextFunction } from 'express'
-import { getCookieConfig } from 'infrastructure/config/cookie.config.js';
+import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
 
 
 export class LoginUserController {
@@ -18,8 +18,7 @@ export class LoginUserController {
 
 
             // Retrieve config and set http only cookies configuration
-            const cookieOptions = getCookieConfig()
-            res.cookie('token', jwtToken, cookieOptions)
+            res.cookie('token', jwtToken, cookieConfig)
 
             res.status(200).json({
                 status: 'success',

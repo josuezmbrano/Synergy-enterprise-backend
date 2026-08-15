@@ -1,7 +1,7 @@
 import { UpdateEmailBodySchema, UpdateUserEmailInput } from '@project/common/schemas/user.schema.js';
 import { UpdateEmailCase } from 'application/use-cases/user/update-email.usecase.js';
 import type { Request, Response, NextFunction } from 'express-serve-static-core';
-import { getCookieConfig } from 'infrastructure/config/cookie.config.js';
+import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
 import z from 'zod';
 
 
@@ -30,8 +30,8 @@ export class UpdateEmailController {
 
 
             // Retrieve config and set http only cookies configuration
-            const cookieOptions = getCookieConfig()
-            res.cookie('token', jwtToken, cookieOptions)
+            
+            res.cookie('token', jwtToken, cookieConfig)
 
             res.status(200).json({
                 status: 'success',

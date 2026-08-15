@@ -21,7 +21,6 @@ export async function setup() {
         const databaseUrl = container.getConnectionUri();
 
         process.env.INTERNAL_TEST_BASE_URL = databaseUrl;
-        process.env.NODE_ENV = 'test'
 
         console.log(`✅ [Testcontainers] Postgres global container is set up`);
         console.log('🚀 [Setup Global] Waiting for test files to initialize their schemas... \n');

@@ -1,5 +1,5 @@
+import { env } from "infrastructure/config/env.config.js"
 
-type AllowedEnvironmentConfig = 'test'
 
 export interface NodemailerConfig {
     host: string
@@ -10,25 +10,11 @@ export interface NodemailerConfig {
     }
 }
 
-const nodeMailerInternalConfig: Record<AllowedEnvironmentConfig, NodemailerConfig> = {
-    test: {
-        host: process.env.TEST_MAILPIT_HOST || '',
-        port: parseInt(process.env.TEST_MAILPIT_SMTP_PORT || '0', 10),
-        secure: false,
-        tls: {
-            rejectUnauthorized: false
-        } 
+export const nodemailerConfig: NodemailerConfig = Object.freeze({
+    host: env.TEST_MAILPIT_HOST,
+    port: env.TEST_MAILPIT_SMTP_PORT,
+    secure: false,
+    tls: {
+        rejectUnauthorized: false
     }
-} 
-
-export const getNodemailerConfig = (): NodemailerConfig => {
-    const actualEnvironment = process.env.NODE_ENV || 'test'
-
-    const config = nodeMailerInternalConfig[actualEnvironment as AllowedEnvironmentConfig]
-
-    if (actualEnvironment === 'test' && (!config.host || config.port === 0)) {
-        throw new Error("Critical: Mailpit host or smtp port env variable is missing in environment.")
-    }
-
-    return config
-}
+})
