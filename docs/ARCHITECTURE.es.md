@@ -196,7 +196,7 @@ Validar que las Invariantes (Business Rules) no emitan falsos positivos, garanti
 - **Consecuencias Positivas:** Compatibilidad total con Edge Computing (Cold starts ultrarrápidos, bypass de los límites de conexión de PgBouncer) sin sacrificar la capacidad de realizar TDD local con Docker nativo.
 - **Trade-offs:** Dualidad de configuración y la necesidad de inyectar dependencias condicionales al inicializar el Singleton del cliente ORM.
 
-### ADR-008: Environment Variable Validation & Fail-Fast Startup Strategy (Production Hardening)
+### ADR-008: Validación de variables de entorno y estrategia ante fallos (Fail-fast) en el inicio (Hardening para producción).
 
 - **Contexto:** Una aplicación que opera sin una validación estricta de variables de entorno al arrancar corre el riesgo de sufrir fallos silenciosos en *runtime*, configuraciones *fallback* inseguras o errores de red confusos en capas profundas de la lógica de negocio (por ejemplo, intentar ejecutar consultas con una `DATABASE_URL` no inicializada).
 Además, los *integration tests* que utilizan contenedores dinámicos (*Testcontainers*) inyectan puertos y cadenas de conexión en tiempo de ejecución, lo que crea potenciales *race conditions* con la *top-level module evaluation* de Node.js.
