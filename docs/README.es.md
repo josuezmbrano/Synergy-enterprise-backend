@@ -97,6 +97,13 @@ La capa de persistencia adapta dinámicamente su adaptador de conexión según e
   ```  
 * **Pruebas de Integración (`Testcontainers + PrismaPg`):** Cambia automáticamente a TCP nativo mediante `@prisma/adapter-pg` para comunicarse directamente con contenedores Docker efímeros creados para cada suite de tests.
 
+## 🩺 Infraestructura y Health Checks
+
+| Endpoint | Método | Autenticación | Descripción |
+| :--- | :--- | :--- | :--- |
+| `/health/liveness` | `GET` | Ninguna | Retorna tiempo de actividad del proceso y métricas de memoria (`rssMB`, `heapUsedMB`, `heapTotalMB`). |
+| `/health/readiness` | `GET` | Ninguna | Valida conectividad activa a la base de datos vía `DatabasePinger` (`SELECT 1`). Retorna `200 OK` o `503 Service Unavailable`. |
+
 ## ⚙️ Primeros Pasos
 
 ### 📋 Requisitos Previos

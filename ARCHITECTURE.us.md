@@ -205,3 +205,9 @@ Additionally, integration tests using dynamic containers (Testcontainers) inject
 - **Decision:** implement a **Fail-Fast Environment Validation** pattern using **Zod** (`envSchema`), separating the application's configuration runtime from the process's dynamic infrastructure environment.
 - **Positive Consequences:** The app fails at second 0 if misconfigured, avoiding corrupted runtime states. Clear, descriptive validation error messages on boot and production code is 100% type-safe and decoupled from test orchestration dynamics.
 - **Trade-offs:** Developers must maintain both `.env.example` and `envSchema` when adding new external service integrations.
+
+### ADR-009: Two-Tiered Health Checks & Database Probe Resilience (Liveness vs. Readiness)
+- **Context:** Coupling overall application health to database availability in a single probe causes false positives: transient database latency spikes trigger orchestrators (Render, AWS ECS, Kubernetes) to prematurely kill and restart healthy application instances.
+- **Decision:** Implement a decoupled two-tiered health strategy under /health. /liveness checks process metrics (rssMB, heapUsedMB, uptime) without external dependencies. /readiness executes an isolated DatabasePinger (SELECT 1) capped by a strict 2000ms Promise.race timeout with clearTimeout cleanup in finally.
+- **Positive Consequences:** Prevents cascading container restart loops during database outages by temporarily pausing traffic instead of killing instances. Eliminates Node.js timer leaks under high-frequency polling.
+- **Trade-offs:** Slightly increases routing setup complexity by requiring separate controllers and pinger abstractions.

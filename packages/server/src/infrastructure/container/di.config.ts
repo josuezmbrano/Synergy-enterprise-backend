@@ -16,7 +16,11 @@ import { nodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-
 import { CheckAuthMiddleware } from 'infrastructure/http/middlewares/check-auth.middleware.js';
 import { PrismaInvitationRepository } from 'infrastructure/repositories/invitation.prisma.js';
 import { env } from 'infrastructure/config/env.config.js';
+import { DatabasePinger } from 'infrastructure/lib/database-pinger.js';
 
+
+// HEALTH MONITORING INSTANCE
+const databasePinger = new DatabasePinger(prisma)
 
 // INFRASTRUCTURE REPOSITORY INSTANCES
 const userRepository = new PrismaUserRepository(prisma)
@@ -50,6 +54,10 @@ export const containerDI = {
         taskRepository,
         verificationTokenRepository,
         invitationRepository
+    },
+
+    healthMonitorResource: {
+        databasePinger
     },
 
     transactionalCoordinator: {

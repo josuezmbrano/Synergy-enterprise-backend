@@ -197,9 +197,15 @@ Validar que las Invariantes (Business Rules) no emitan falsos positivos, garanti
 - **Trade-offs:** Dualidad de configuración y la necesidad de inyectar dependencias condicionales al inicializar el Singleton del cliente ORM.
 
 ### ADR-008: Validación de variables de entorno y estrategia ante fallos (Fail-fast) en el inicio (Hardening para producción).
-
 - **Contexto:** Una aplicación que opera sin una validación estricta de variables de entorno al arrancar corre el riesgo de sufrir fallos silenciosos en *runtime*, configuraciones *fallback* inseguras o errores de red confusos en capas profundas de la lógica de negocio (por ejemplo, intentar ejecutar consultas con una `DATABASE_URL` no inicializada).
 Además, los *integration tests* que utilizan contenedores dinámicos (*Testcontainers*) inyectan puertos y cadenas de conexión en tiempo de ejecución, lo que crea potenciales *race conditions* con la *top-level module evaluation* de Node.js.
 - **Decisión:** Implementar un patrón de **Fail-Fast Environment Validation** utilizando **Zod** (`envSchema`), separando el *runtime* de configuración de la aplicación del entorno dinámico de infraestructura del proceso.
 - **Consecuencias Positivas:** La aplicación falla en el segundo 0 si está mal configurada, evitando estados corruptos en *runtime*. Proporciona mensajes de error de validación claros y descriptivos al arrancar (*boot*), y el código de producción se mantiene 100% *type-safe* y desacoplado de las dinámicas de orquestación de pruebas.
 - **Trade-offs:** Los desarrolladores deben mantener tanto el archivo `.env.example` como el `envSchema` al agregar nuevas integraciones de servicios externos.
+
+### ADR-009: Sondas de Salud de Dos Niveles y Resiliencia en Pruebas de Base de Datos (Liveness vs. Readiness)
+- **Contexto:** Acoplar la salud general de la aplicación a la disponibilidad de la base de datos en una sola sonda genera falsos positivos: picos transitorios de latencia en la base de datos hacen que los orquestadores (Render, AWS ECS, Kubernetes) destruyan y reicien prematuramente instancias de la app que están sanas.
+Además, los *integration tests* que utilizan contenedores dinámicos (*Testcontainers*) inyectan puertos y cadenas de conexión en tiempo de ejecución, lo que crea potenciales *race conditions* con la *top-level module evaluation* de Node.js.
+- **Decisión:** Implementar una estrategia de salud desacoplada en dos niveles bajo /health. /liveness verifica métricas del proceso (rssMB, heapUsedMB, uptime) sin dependencias externas. /readiness ejecuta un DatabasePinger aislado (SELECT 1) limitado por un timeout estricto de 2000ms mediante Promise.race y limpieza con clearTimeout en finally.
+- **Consecuencias Positivas:** Evita bucles de reinicio en cascada de contenedores durante caídas de la base de datos al pausar temporalmente el tráfico en lugar de destruir instancias. Elimina fugas de memoria (timer leaks) bajo monitoreo de alta frecuencia.
+- **Trade-offs:** Incrementa ligeramente la complejidad del enrutamiento al requerir controladores dedicados y abstracciones para el pinger.

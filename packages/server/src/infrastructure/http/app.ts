@@ -16,6 +16,7 @@ import { invitationModulesContainer } from 'infrastructure/container/di/invitati
 import { containerDI } from 'infrastructure/container/di.config.js'
 import { validateRequest } from './middlewares/validate-request.middleware.js'
 import { InviteToProjectBodySchema } from '@project/common/schemas/invitation.schema.js'
+import { healthRoutes } from './routes/health.routes.js'
 
 
 const app = express()
@@ -34,6 +35,8 @@ app.get('/', (_req: Request, res: Response) => {
     res.status(200).send({ message: '[Synergy] Enterprise Project System app server is running!' });
 });
 
+// HEALTH CHECKS (INFRASTRUCTURE PROBES)
+app.use('/health', healthRoutes)
 
 // ROUTER ASSEMBLY
 app.use('/api/v1/auth', authRouter)

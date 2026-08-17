@@ -95,7 +95,14 @@ The persistence layer dynamically adapts its connection adapter based on the act
   ```env
   DATABASE_URL="postgres://user:password@ep-sample-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"
   ```  
-* **Integration Testing (`Testcontainers + PrismaPg`):** Automatically switches to native TCP via `@prisma/adapter-pg` to communicate directly with isolated, ephemeral PostgreSQL Docker containers created per test suite. 
+* **Integration Testing (`Testcontainers + PrismaPg`):** Automatically switches to native TCP via `@prisma/adapter-pg` to communicate directly with isolated, ephemeral PostgreSQL Docker containers created per test suite.
+
+## 🩺 Infrastructure & Health Checks
+
+| Endpoint | Method | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `/health/liveness` | `GET` | None | Returns process uptime and memory metrics (`rssMB`, `heapUsedMB`, `heapTotalMB`). |
+| `/health/readiness` | `GET` | None | Validates active database connectivity via `DatabasePinger` (`SELECT 1`). Returns `200 OK` or `503 Service Unavailable`. |
 
 ## ⚙️ Getting Started
 
