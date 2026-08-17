@@ -198,3 +198,10 @@ Validate that Invariants (Business Rules) do not emit false positives, ensuring 
 - **Decision:** Incorporate Prisma v7 Driver Adapters. `@prisma/adapter-neon` (via WebSockets) is used for the production/development environment, and `@prisma/adapter-pg` (native local TCP) is dynamically injected for local tests with Testcontainers (`lib/prisma.ts`).
 - **Positive Consequences:** Full Edge Computing compatibility (Ultra-fast cold starts, bypassing PgBouncer connection limits) without sacrificing the ability to perform local TDD with native Docker.
 - **Trade-offs:** Dual configuration and the need to inject conditional dependencies when initializing the ORM client Singleton.
+
+### ADR-008: Environment Variable Validation & Fail-Fast Startup Strategy (Production Hardening)
+- **Context:** An application operating without strict environment variable validation at startup risks silent runtime failures, insecure fallback configurations, or confusing network errors deep within business logic (e.g., trying to run queries with an uninitialized `DATABASE_URL`).
+Additionally, integration tests using dynamic containers (Testcontainers) inject ports and connection strings at runtime, creating potential race conditions with Node.js top-level module evaluation.
+- **Decision:** implement a **Fail-Fast Environment Validation** pattern using **Zod** (`envSchema`), separating the application's configuration runtime from the process's dynamic infrastructure environment.
+- **Positive Consequences:** The app fails at second 0 if misconfigured, avoiding corrupted runtime states. Clear, descriptive validation error messages on boot and production code is 100% type-safe and decoupled from test orchestration dynamics.
+- **Trade-offs:** Developers must maintain both `.env.example` and `envSchema` when adding new external service integrations.

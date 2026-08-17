@@ -126,6 +126,8 @@ pnpm install
 3) Configura las variables de entorno:
 Crea y actualiza los archivos `.env` tanto en la raíz como dentro de `packages/server` guiándote por el archivo `.env.example`.
 
+>💡 **Nota sobre la Validación de Entorno:** La aplicación utiliza un validador de esquema estricto con Zod al arrancar (src/infrastructure/config/env.config.ts). Si alguna variable requerida (DATABASE_URL, JWT_SECRET, RESEND_API_KEY, DEV_PERSONAL_EMAIL) falta o es inválida, el proceso aplicará un Fail-Fast y se abortará inmediatamente mostrando mensajes de error descriptivos.
+
 4) Ejecuta las migraciones de Base de Datos:
 ```bash
 pnpm prisma migrate dev

@@ -20,7 +20,7 @@ const parseEnv = () => {
     process.exit(1)
   }
 
-  return result.data
+  return Object.freeze(result.data)
 }
 
 export const env = parseEnv()

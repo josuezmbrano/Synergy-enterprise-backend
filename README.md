@@ -126,6 +126,8 @@ pnpm install
 3) Configure Environment Variables:
 Create and update a `.env` file in both the root directory and inside `packages/server` following the `.env.example` file.
 
+> 💡 **Note on Environment Validation:** The application uses a strict Zod schema validator at startup (src/infrastructure/config/env.config.ts). If any required variable (DATABASE_URL, JWT_SECRET, RESEND_API_KEY, DEV_PERSONAL_EMAIL) is missing or invalid, the process will fail fast and abort immediately with descriptive error messages.
+
 4) Run Database Migrations:
 ```bash
 pnpm prisma migrate dev

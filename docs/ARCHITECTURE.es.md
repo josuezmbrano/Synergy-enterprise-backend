@@ -195,3 +195,11 @@ Validar que las Invariantes (Business Rules) no emitan falsos positivos, garanti
 - **Decisión:** Incorporar los Driver Adapters de Prisma v7. Se utiliza `@prisma/adapter-neon` (vía WebSockets) para el entorno productivo/desarrollo y se inyecta dinámicamente `@prisma/adapter-pg` (TCP local nativo) para las pruebas locales con Testcontainers (`lib/prisma.ts`).
 - **Consecuencias Positivas:** Compatibilidad total con Edge Computing (Cold starts ultrarrápidos, bypass de los límites de conexión de PgBouncer) sin sacrificar la capacidad de realizar TDD local con Docker nativo.
 - **Trade-offs:** Dualidad de configuración y la necesidad de inyectar dependencias condicionales al inicializar el Singleton del cliente ORM.
+
+### ADR-008: Environment Variable Validation & Fail-Fast Startup Strategy (Production Hardening)
+
+- **Contexto:** Una aplicación que opera sin una validación estricta de variables de entorno al arrancar corre el riesgo de sufrir fallos silenciosos en *runtime*, configuraciones *fallback* inseguras o errores de red confusos en capas profundas de la lógica de negocio (por ejemplo, intentar ejecutar consultas con una `DATABASE_URL` no inicializada).
+Además, los *integration tests* que utilizan contenedores dinámicos (*Testcontainers*) inyectan puertos y cadenas de conexión en tiempo de ejecución, lo que crea potenciales *race conditions* con la *top-level module evaluation* de Node.js.
+- **Decisión:** Implementar un patrón de **Fail-Fast Environment Validation** utilizando **Zod** (`envSchema`), separando el *runtime* de configuración de la aplicación del entorno dinámico de infraestructura del proceso.
+- **Consecuencias Positivas:** La aplicación falla en el segundo 0 si está mal configurada, evitando estados corruptos en *runtime*. Proporciona mensajes de error de validación claros y descriptivos al arrancar (*boot*), y el código de producción se mantiene 100% *type-safe* y desacoplado de las dinámicas de orquestación de pruebas.
+- **Trade-offs:** Los desarrolladores deben mantener tanto el archivo `.env.example` como el `envSchema` al agregar nuevas integraciones de servicios externos.
