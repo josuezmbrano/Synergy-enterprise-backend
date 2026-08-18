@@ -50,6 +50,7 @@ El sistema respeta estrictamente los límites concéntricos de **Clean Architect
 * **Validación de Frontera en Monorepo (Fail-Fast):** Las cargas útiles (payloads) son sanitizadas y validadas a través de **Zod** compartiendo esquemas desde el workspace `@project/common`, aplicando seguridad perimetral antes de llegar a los controladores.
 * **Prisma Driver Adapters (v7):** Configurado para usar dinámicamente `@prisma/adapter-neon` (WebSockets) en entornos de producción/desarrollo, y TCP nativo (`@prisma/adapter-pg`) para pruebas de integración con Testcontainers.
 * **Flujo Centralizado de Errores:** Pipeline personalizado `BaseDomainError` conectado a un `GlobalErrorMiddleware` unificado para un mapeo predecible de códigos HTTP y salida JSON estructurada.
+* **Graceful Shutdown & gestión del ciclo de vida:** Captura de señales `SIGTERM`/`SIGINT` con drenado de tráfico HTTP, cierre limpio de conexión a PostgreSQL (Prisma) e inversión de control con timeout de seguridad (10s).
 
 ---
 

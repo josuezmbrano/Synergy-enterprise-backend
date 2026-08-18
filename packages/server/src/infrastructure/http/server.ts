@@ -1,41 +1,24 @@
-import { env } from 'infrastructure/config/env.config.js'
-import { app } from './app.js'
-import type { Express } from 'express-serve-static-core'
+import type { Express } from "express"
+import prisma from "infrastructure/lib/prisma.js"
+import { registerGracefulShutdown } from "infrastructure/lib/shutdown-handler.js"
+import { app } from "./app.js"
+import { env } from "infrastructure/config/env.config.js"
 
+const startServer = (app: Express, port: number) => {
 
-class StartServer {
+    const server = app.listen(port, () => {
+        const address = server.address()
+        const actualPort = address && typeof address === 'object' ? address.port : port
+        console.log(`🚀 Secure HTTP server running on http://localhost:${actualPort}`)
+    })
 
-    private readonly expressApp: Express
-    private realPort: number
+    server.on('error', (error) => {
+        console.error('Critical error while initiating server: ', error)
+        process.exit(1)
+    })
 
-    constructor(port: number) {
-        this.expressApp = app
-        this.realPort = port
-    }
-
-    public start(): void {
-        const server = this.expressApp.listen(this.realPort, () => {
-            // EXTRACT THE CORRECT PORT ADDRESS INFO IN CASE WE ARE LISTENING
-            // TO THE OPEN PORT ASSIGNMENT (0) ON TEST ENVIRONMENT
-            const address = server.address()
-
-            if (address && typeof address === 'object') this.realPort = address.port
-
-            console.log(`🚀 Secure HTTP server running on http://localhost:${this.realPort}`)
-        })
-
-        server.on('error', (error) => {
-            console.error('Critical error while initiating server:', error)
-            process.exit(1)
-        })
-    }
-
-    public get actualPort(): number {
-        return this.realPort
-    }
-
+    registerGracefulShutdown(server, async () => await prisma.$disconnect())
 }
 
-const server = new StartServer(env.PORT)
-server.start()
+startServer(app, env.PORT)
 

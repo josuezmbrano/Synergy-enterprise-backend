@@ -50,6 +50,7 @@ The system strictly adheres to the **Clean Architecture** concentric layer bound
 * **Monorepo Boundary Validation (Fail-Fast):** Request payloads are sanitized and validated via **Zod** using a shared workspace (`@project/common`), enforcing strict perimeter security before hitting controllers.
 * **Prisma Driver Adapters (v7):** Configured to dynamically use `@prisma/adapter-neon` (WebSockets) for Serverless environments, and native TCP (`@prisma/adapter-pg`) for isolated integration tests running against ephemeral Docker containers via Testcontainers.
 * **Centralized Error Flow:** Custom `BaseDomainError` pipeline connected to a unified `GlobalErrorMiddleware` for predictable HTTP status mapping and structured JSON output.
+* **Graceful Shutdown & Process Lifecycle:** `SIGTERM`/`SIGINT` signal handling featuring HTTP traffic draining, clean PostgreSQL connection teardown via Prisma, inversion-of-control cleanup callbacks, and a 10s fallback safety timeout.
 
 ---
 

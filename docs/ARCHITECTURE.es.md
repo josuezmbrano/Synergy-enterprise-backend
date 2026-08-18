@@ -152,7 +152,26 @@ Validar que las Invariantes (Business Rules) no emitan falsos positivos, garanti
 
 ---
 
-## 5. ARCHITECTURAL DECISION RECORDS (ADRs)
+## 5. INFRASTRUCTURE AND RESILIENCE
+
+### 🔄 Graceful Shutdown & Process Lifecycle (Fase 1.3)
+
+El servidor implementa un mecanismo de apague elegante (*Graceful Shutdown*) agnóstico al orquestador de infraestructura (Docker, Kubernetes, Render).
+
+#### Flujo de Apagado Controlado
+Ante señales del sistema operativo (`SIGINT` de consola o `SIGTERM` del orquestador de contenedores):
+
+1. **Intercepción de Señal:** `registerGracefulShutdown` detiene nuevas ejecuciones duplicadas de la señal.
+2. **Cierre de Tráfico HTTP:** `server.close()` deja de aceptar tráfico entrante de inmediato y procesa solo las peticiones en vuelo (*in-flight requests*).
+3. **Inversión de Control (Cleanup Callback):** Se ejecuta el callback asíncrono de limpieza (`onShutdown`) para cerrar ordenadamente las conexiones de base de datos (`PrismaClient.$disconnect()`).
+4. **Timeout de Seguridad (Force Exit):** Se activa un temporizador *unref* de 10 segundos para forzar la salida (`process.exit(1)`) si una petición o transacción queda colgada indefinidamente.
+5. **Salida Limpia:** Finaliza el proceso Node.js con código de éxito `0`.
+
+> **Nota de Infraestructura:** El servidor Node.js se mantiene en HTTP plano para operar detrás de un Reverse Proxy o Load Balancer con *TLS Termination* (e.g., Nginx, Cloudflare, AWS ALB).
+
+---
+
+## 6. ARCHITECTURAL DECISION RECORDS (ADRs)
 
 ### ADR-001: Clean Architecture + DDD vs MVC Convencional
 - **Contexto:** Synergy requiere acomodar lógicas complejas y entrelazadas (Invitaciones que modifican Miembros, Proyectos que restringen Tareas) en un entorno donde múltiples equipos podrían intervenir. El MVC clásico tiende a generar "Controladores Engordados" o "Modelos Anémicos", acoplando el ORM a las reglas de negocio.
