@@ -1,6 +1,7 @@
-import { IMailService, SendEmailInput } from 'core/services/mail-interface.service.js';
+import { IMailService, SendEmailOptions } from 'application/ports/mail-interface.service.js';
 import { Resend } from 'resend';
-import { ResendConfig } from './resend-config.js';
+import { ResendConfig } from '../../config/modules/resend-config.js';
+import { mailTemplates } from '../templates/mail-templates.js';
 
 
 
@@ -15,15 +16,18 @@ export class ResendMailService implements IMailService {
     }
 
 
-    async sendEmail(input: SendEmailInput): Promise<void> {
-        const forwardToEmail = this.resendConfig.overridesTo ?? input.to
+    async sendEmail(options: SendEmailOptions): Promise<void> {
+        const forwardToEmail = this.resendConfig.overridesTo ?? options.to
+
+        const templateBuilder = mailTemplates[options.template]
+        const { body, subject } = templateBuilder(options.data)
 
         try {
             await this.client.emails.send({
                 from: this.resendConfig.from,
                 to: forwardToEmail,
-                subject: input.subject,
-                text: input.body
+                subject: subject,
+                text: body
             })
         } catch (error) {
             throw new Error(`[ResendMailService] HTTP Failure: ${(error as Error).message}`);

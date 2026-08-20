@@ -3,14 +3,13 @@ import { RequestPasswordResetInput } from '@project/common/schemas/user.schema.j
 import { BaseUseCase } from '../base.use-case.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'core/services/mail-interface.service.js';
+import { IMailService } from 'application/ports/mail-interface.service.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { mailTemplates } from 'core/constants/mail-templates.js';
 import { LoggerPort } from 'application/ports/logger.port.js';
 
 
@@ -61,12 +60,10 @@ export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordRese
             await this.tokenRepository.saveToken(verificationToken)
         })
 
-        // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.PASSWORD_RESET_REQUEST_VERIFICATION({ fullname: userAccount.fullname, token: verificationTokenId.value })
 
         // SAVE AND SEND TO EMAIL
         try {
-            await this.mailService.sendEmail({ to: actingUserEmail.value, subject: mailContent.subject, body: mailContent.body })
+            await this.mailService.sendEmail({ to: actingUserEmail.value, template: 'PASSWORD_RESET_REQUEST_VERIFICATION', data: { fullname: userAccount.fullname, token: verificationTokenId.value } })
         } catch (error) {
             this.logger.error('Failed to send password reset email verification', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
         }

@@ -5,7 +5,7 @@ import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity
 import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js'
 import { ITokenRepository } from 'core/repositories/token.repository.js'
 import { IUserRepository } from 'core/repositories/user.repository.js'
-import { IMailService } from 'core/services/mail-interface.service.js'
+import { IMailService } from 'application/ports/mail-interface.service.js'
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js'
 import { TokenMother } from 'test/builders/token.mother.js'
 import { UserMother } from 'test/builders/user.mother.js'

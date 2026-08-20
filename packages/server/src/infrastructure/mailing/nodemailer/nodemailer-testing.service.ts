@@ -1,7 +1,8 @@
-import { IMailService, SendEmailInput } from 'core/services/mail-interface.service.js';
-import { NodemailerConfig } from './nodemailer-testing.config.js';
+import { IMailService, SendEmailOptions } from 'application/ports/mail-interface.service.js';
+import { NodemailerConfig } from '../../config/modules/nodemailer-testing.config.js';
 import type { Transporter } from 'nodemailer'
 import { createTransport } from 'nodemailer'
+import { mailTemplates } from '../templates/mail-templates.js';
 
 export class NodemailService implements IMailService {
 
@@ -18,15 +19,17 @@ export class NodemailService implements IMailService {
         })
     }
 
-    
-    async sendEmail(input: SendEmailInput): Promise<void> {
-       
+
+    async sendEmail(options: SendEmailOptions): Promise<void> {
+        const templateBuilder = mailTemplates[options.template]
+        const { subject, body } = templateBuilder(options.data)
+
         try {
             await this.transporter.sendMail({
                 from: 'Synergy <onboarding@resend.dev>',
-                to: input.to,
-                subject: input.subject,
-                text: input.body
+                to: options.to,
+                subject: subject,
+                text: body
             })
         } catch (error) {
             throw new Error(`[NodemailerMailService] SMTP Failure: ${(error as Error).message}`);

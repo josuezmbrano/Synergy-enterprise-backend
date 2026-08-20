@@ -9,9 +9,8 @@ import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
-import { IMailService } from 'core/services/mail-interface.service.js';
+import { IMailService } from 'application/ports/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { mailTemplates } from 'core/constants/mail-templates.js';
 import { LoggerPort } from 'application/ports/logger.port.js';
 
 
@@ -59,13 +58,10 @@ export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerif
         })
 
 
-        // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.RESEND_EMAIL_VERIFICATION({ fullname: userAccount.fullname, token: verificationTokenId.value })
-
-
+       
         try {
             // SAVE AND SEND TOKEN TO USER EMAIL
-            await this.mailService.sendEmail({ to: userAccount.email.value, ...mailContent })
+            await this.mailService.sendEmail({ to: userAccount.email.value, template: 'RESEND_EMAIL_VERIFICATION', data: { fullname: userAccount.fullname, token: verificationTokenId.value } })
         } catch (error) {
             this.logger.error('Failed to send verification email', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
         }

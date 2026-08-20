@@ -1,23 +1,16 @@
+import { MailTemplateData } from "application/ports/mail-templates.types.js"
 
 export interface MailContent {
     subject: string
     body: string
 }
 
-interface DataContent {
-    fullname: string
-    token: string
-}
+type TemplateData<T extends MailTemplateData['template']> = Extract<MailTemplateData, { template: T }>['data']
 
-type AllowedMailTemplates =
-    | 'REGISTER_VERIFICATION'
-    | 'PASSWORD_RESET_REQUEST_VERIFICATION'
-    | 'RESEND_EMAIL_VERIFICATION'
-    | 'EMAIL_UPDATE_VERIFICATION'
 
-    
-export const mailTemplates: Record<AllowedMailTemplates, (data: DataContent) => MailContent> = {
-    REGISTER_VERIFICATION: (data: DataContent): MailContent => ({
+export const mailTemplates: { [K in MailTemplateData['template']]: (data: TemplateData<K>) => MailContent } = {
+
+    REGISTER_VERIFICATION: (data): MailContent => ({
         subject: '🔐 Account confirmation - Synergy security code',
         body: `Dear ${data.fullname},
 
@@ -31,7 +24,7 @@ Sincerely, Synergy Technical Support`
     }),
 
 
-    PASSWORD_RESET_REQUEST_VERIFICATION: (data: DataContent): MailContent => ({
+    PASSWORD_RESET_REQUEST_VERIFICATION: (data): MailContent => ({
         subject: '[Security] Verification code to reset password',
         body: `Dear ${data.fullname},
 
@@ -47,7 +40,7 @@ Sincerely, Synergy Security Department`
     }),
 
 
-    RESEND_EMAIL_VERIFICATION: (data: DataContent): MailContent => ({
+    RESEND_EMAIL_VERIFICATION: (data): MailContent => ({
         subject: 'Resend request: Account verification code',
         body: `Dear ${data.fullname},
 
@@ -66,7 +59,7 @@ Synergy Technical Support`
     }),
 
 
-    EMAIL_UPDATE_VERIFICATION: (data: DataContent): MailContent => ({
+    EMAIL_UPDATE_VERIFICATION: (data): MailContent => ({
         subject: '[Security] Email update verification',
         body: `Dear ${data.fullname},
 

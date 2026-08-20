@@ -1,6 +1,6 @@
 import prisma from 'infrastructure/lib/prisma.js';
-import { nodemailerConfig } from 'infrastructure/services/nodemailer/nodemailer-testing.config.js';
-import { NodemailService } from 'infrastructure/services/nodemailer/nodemailer-testing.service.js';
+import { nodemailerConfig } from 'infrastructure/config/modules/nodemailer-testing.config.js';
+import { NodemailService } from 'infrastructure/mailing/nodemailer/nodemailer-testing.service.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 import { containerDI } from 'infrastructure/container/di.config.js';
 
@@ -29,15 +29,18 @@ describe('Integration test - Database connection', () => {
 
         const mailService = new NodemailService(nodemailerConfig);
 
-        const testEmailInput = {
+        const testEmailOptions = {
             to: 'test-vanguard@synergy.com',
-            subject: '🚀 Testing Mailpit Container Integration',
-            body: 'If you are reading this, the Testcontainers + Mailpit + Nodemailer pipeline is 100% working! 🔑 Token: 9999'
+            template: 'REGISTER_VERIFICATION' as const,
+            data: {
+                fullname: 'Vanguard Tester',
+                token: '9999'
+            }
         };
 
-        pinoLogger.info('📧 Sending ephemeral email through NodemailService...', { recipient: testEmailInput.to });
+        pinoLogger.info('📧 Sending ephemeral email through NodemailService...', { recipient: testEmailOptions.to });
 
-        await expect(mailService.sendEmail(testEmailInput)).resolves.not.toThrow();
+        await expect(mailService.sendEmail(testEmailOptions)).resolves.not.toThrow();
         pinoLogger.info('📩 Email sent to SMTP port successfully.');
 
         pinoLogger.info('🔍 Querying Mailpit HTTP API to assert delivery...');
@@ -58,8 +61,8 @@ describe('Integration test - Database connection', () => {
             subject: lastEmail.Subject
         })
 
-        expect(lastEmail.To[0].Address).toBe(testEmailInput.to);
-        expect(lastEmail.Subject).toBe(testEmailInput.subject);
+        expect(lastEmail.To[0].Address).toBe(testEmailOptions.to);
+        expect(lastEmail.Subject).toBe('🔐 Account confirmation - Synergy security code');
 
         if (lastEmail.Snippet) {
             expect(lastEmail.Snippet).toContain('9999');

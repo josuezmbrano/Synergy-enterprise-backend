@@ -6,21 +6,20 @@ import { UserNameVo } from 'core/value-objects/user/user-name.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserLastnameVo } from 'core/value-objects/user/user-lastname.vo.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
-import { IAuthService } from 'core/services/auth-interface.service.js';
+import { IAuthService } from 'application/ports/auth-interface.service.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'core/services/mail-interface.service.js';
+import { IMailService } from 'application/ports/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { mailTemplates } from 'core/constants/mail-templates.js';
 import { LoggerPort } from 'application/ports/logger.port.js';
 
 export class RegisterUserCase implements BaseUseCase<RegisterUserInput, RegisterUserOutput> {
@@ -88,13 +87,9 @@ export class RegisterUserCase implements BaseUseCase<RegisterUserInput, Register
         })
 
 
-        // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.REGISTER_VERIFICATION({ fullname: newUserPersisted.fullname, token: validationTokenId.value })
-
-
         // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE SIGNUP IS COMPLETED 
         try {
-            await this.mailService.sendEmail({ to: newUserPersisted.email.value, subject: mailContent.subject, body: mailContent.body })
+            await this.mailService.sendEmail({ to: newUserPersisted.email.value, template: 'REGISTER_VERIFICATION', data: { fullname: newUserPersisted.fullname, token: validationTokenId.value } })
         } catch (error) {
             this.logger.error('Failed to send registration email', error, { email: newUserPersisted.email.value, userId: newUserPersisted.publicId.value })
         }

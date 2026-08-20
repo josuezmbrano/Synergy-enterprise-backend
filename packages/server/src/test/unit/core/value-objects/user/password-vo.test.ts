@@ -1,7 +1,7 @@
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js'
 import { UserDomainError } from 'core/errors/domain/domain-classes.error.js';
 import { expectDomainError } from 'test/utils/test-errors.utils.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 
 
 describe('UserPasswordVo create and hash methods, validation and prop testing', () => {

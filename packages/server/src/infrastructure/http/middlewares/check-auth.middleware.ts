@@ -1,4 +1,4 @@
-import { IAuthService } from 'core/services/auth-interface.service.js';
+import { IAuthService } from 'application/ports/auth-interface.service.js';
 import type { Request, Response, NextFunction } from 'express-serve-static-core';
 
 

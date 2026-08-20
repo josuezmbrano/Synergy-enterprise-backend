@@ -4,9 +4,9 @@ import { RegisterUserCase } from 'application/use-cases/user/register-user.useca
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js'
 import { ITokenRepository } from 'core/repositories/token.repository.js'
 import { IUserRepository } from 'core/repositories/user.repository.js'
-import { IAuthService } from 'core/services/auth-interface.service.js'
-import { IMailService } from 'core/services/mail-interface.service.js'
-import { IPasswordHasher } from 'core/services/password-interface.service.js'
+import { IAuthService } from 'application/ports/auth-interface.service.js'
+import { IMailService } from 'application/ports/mail-interface.service.js'
+import { IPasswordHasher } from 'core/ports/password-interface.service.js'
 import { UserMother } from 'test/builders/user.mother.js'
 import { mock, MockProxy } from 'vitest-mock-extended'
 

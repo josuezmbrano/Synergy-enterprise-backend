@@ -1,4 +1,4 @@
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 import { hash, compare } from 'bcrypt'
 
 export class BcryptPasswordHasher implements IPasswordHasher {

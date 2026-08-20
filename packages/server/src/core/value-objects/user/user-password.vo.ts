@@ -1,7 +1,7 @@
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { BaseValueObject } from '../base.value-objects.js';
 import { USER_CONSTRAINTS } from '@project/common/constants/user.constants.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 
 export class UserPasswordVo extends BaseValueObject<string, 'UserPasswordVo'> {
 

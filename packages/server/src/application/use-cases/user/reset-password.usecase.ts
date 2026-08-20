@@ -7,7 +7,7 @@ import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js'
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
 

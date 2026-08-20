@@ -1,7 +1,7 @@
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
-import { AuthPayload, IAuthService } from 'core/services/auth-interface.service.js';
+import { AuthPayload, IAuthService } from 'application/ports/auth-interface.service.js';
 import jwt from 'jsonwebtoken';
-import type { JwtConfig } from './jwt-config.js'; 
+import type { JwtConfig } from '../../config/modules/jwt-config.js'; 
 
 
 

@@ -4,7 +4,7 @@ import { BaseUseCase } from '../base.use-case.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';

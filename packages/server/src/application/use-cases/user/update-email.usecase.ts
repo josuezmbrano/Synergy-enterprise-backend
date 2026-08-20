@@ -4,19 +4,18 @@ import { BaseUseCase } from '../base.use-case.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
-import { IAuthService } from 'core/services/auth-interface.service.js';
+import { IAuthService } from 'application/ports/auth-interface.service.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'core/services/mail-interface.service.js';
+import { IMailService } from 'application/ports/mail-interface.service.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { mailTemplates } from 'core/constants/mail-templates.js';
 import { LoggerPort } from 'application/ports/logger.port.js';
 
 export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, UpdateUserEmailOutput> {
@@ -95,13 +94,9 @@ export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, Update
         })
 
 
-        // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.EMAIL_UPDATE_VERIFICATION({ fullname: userUpdated.fullname, token: validationToken.value })
-
-
         // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE UPDATE IS COMPLETED 
         try {
-            await this.mailService.sendEmail({ to: userUpdated.email.value, subject: mailContent.subject, body: mailContent.body })
+            await this.mailService.sendEmail({ to: userUpdated.email.value, template: 'EMAIL_UPDATE_VERIFICATION', data: { fullname: userUpdated.fullname, token: validationToken.value } })
         } catch (error) {
             this.logger.error('Failed to send email update verification', error, { email: userUpdated.email.value, userId: userAccount.publicId.value })
         }

@@ -2,8 +2,8 @@ import { LoginUserOutput } from 'application/dtos/user/login-user.dto.js';
 import { LoginUserInput } from '@project/common/schemas/user.schema.js'
 import { BaseUseCase } from '../base.use-case.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
-import { IPasswordHasher } from 'core/services/password-interface.service.js';
-import { IAuthService } from 'core/services/auth-interface.service.js';
+import { IPasswordHasher } from 'core/ports/password-interface.service.js';
+import { IAuthService } from 'application/ports/auth-interface.service.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
