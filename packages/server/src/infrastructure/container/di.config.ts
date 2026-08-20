@@ -17,10 +17,18 @@ import { CheckAuthMiddleware } from 'infrastructure/http/middlewares/check-auth.
 import { PrismaInvitationRepository } from 'infrastructure/repositories/invitation.prisma.js';
 import { env } from 'infrastructure/config/env.config.js';
 import { DatabasePinger } from 'infrastructure/lib/database-pinger.js';
+import { PinoLoggerAdapter } from 'infrastructure/logging/pino-logger.adapter.js';
+import pino from 'pino';
+import { pinoOptions } from 'infrastructure/config/modules/logger.config.js';
 
 
 // HEALTH MONITORING INSTANCE
 const databasePinger = new DatabasePinger(prisma)
+
+
+// LOGGER MONITOR INSTANCE
+const pinoLogger = new PinoLoggerAdapter(pino(pinoOptions))
+
 
 // INFRASTRUCTURE REPOSITORY INSTANCES
 const userRepository = new PrismaUserRepository(prisma)
@@ -58,6 +66,10 @@ export const containerDI = {
 
     healthMonitorResource: {
         databasePinger
+    },
+
+    loggerMonitorInstance: {
+        pinoLogger
     },
 
     transactionalCoordinator: {

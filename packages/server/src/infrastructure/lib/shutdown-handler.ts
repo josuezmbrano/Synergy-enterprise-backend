@@ -1,5 +1,7 @@
 import { Server } from "http";
+import { containerDI } from "infrastructure/container/di.config.js";
 
+const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
 export const registerGracefulShutdown = (server: Server, onShutdown: () => Promise<void>, timeoutMs: number = 10000): void => {
 
@@ -8,29 +10,29 @@ export const registerGracefulShutdown = (server: Server, onShutdown: () => Promi
     const handleSignal = (signal: NodeJS.Signals) => {
 
         if (isShuttingDown) {
-            console.log(`Shutdown already in progress. Ignoring ${signal}`)
+            pinoLogger.warn('Shutdown already in progress. Ignoring duplicate signal', { signal })
             return
         }
 
         isShuttingDown = true
-        console.log(`\nSignal received: ${signal}. Initiating graceful shutdown...`)
+        pinoLogger.warn(`Signal received: ${signal}. Initiating graceful shutdown...`, { signal, timeoutMs })
 
         const forceExitTimer = setTimeout(() => {
-            console.error(`Forced shutdown! Operations exceeded timeout of ${timeoutMs}ms.`)
+            pinoLogger.error(`Forced shutdown! Operations exceeded timeout of ${timeoutMs}ms`, undefined, { timeoutMs })
             process.exit(1)
         }, timeoutMs).unref()
 
-        console.log('Closing HTTP server (stopping new incoming traffic)...');
+        pinoLogger.info('Closing HTTP server (stopping new incoming traffic)...')
 
         server.close(async () => {
 
             try {
-                console.log('Closing database connections...');
+                pinoLogger.info('Closing database connections and cleaning up resources...')
                 await onShutdown();
-                console.log('Cleanup completed successfully.');
+                pinoLogger.info('Cleanup completed successfully. Exiting process.')
                 process.exit(0);
             } catch (error) {
-                console.error('Failed to close database connection cleanly:', error);
+                pinoLogger.error('Failed to close resources cleanly during shutdown', error)
                 clearTimeout(forceExitTimer)
                 process.exit(1);
             }

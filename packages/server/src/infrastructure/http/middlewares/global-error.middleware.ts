@@ -1,14 +1,23 @@
 import { BaseDomainError } from 'core/errors/base-domain.error.js'
 import type { Request, Response, NextFunction } from 'express'
 import { env } from 'infrastructure/config/env.config.js'
+import { containerDI } from 'infrastructure/container/di.config.js'
 import { getHttpStatusCode } from 'infrastructure/mapper.error.js'
 
-export const GlobalErrorMiddleware = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
+
+export const GlobalErrorMiddleware = (err: Error, req: Request, res: Response, _next: NextFunction) => {
 
     if (err instanceof BaseDomainError) {
 
         const statusCode = getHttpStatusCode(err.errorType, err.internalCode)
         const errorResponse = err.toJSON()
+
+        pinoLogger.warn(`Domain error [${err.errorType}]: ${err.message}`, {
+            internalCode: err.internalCode,
+            path: req.path,
+            statusCode
+        });
 
         res.status(statusCode).json({
             status: 'error',
@@ -19,7 +28,10 @@ export const GlobalErrorMiddleware = (err: Error, _req: Request, res: Response, 
 
     }
 
-    console.error('Unhandled server error', err)
+    pinoLogger.error('Unhandled server error', err, {
+        path: req.path,
+        method: req.method
+    });
 
     return res.status(500).json({
         status: 'error',

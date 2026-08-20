@@ -17,6 +17,7 @@ import { IMailService } from 'core/services/mail-interface.service.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
 import { mailTemplates } from 'core/constants/mail-templates.js';
+import { LoggerPort } from 'application/ports/logger.port.js';
 
 export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, UpdateUserEmailOutput> {
 
@@ -26,7 +27,8 @@ export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, Update
         private readonly passwordHasher: IPasswordHasher,
         private readonly authService: IAuthService,
         private readonly mailService: IMailService,
-        private readonly unitOfWork: IBaseUnitOfWork
+        private readonly unitOfWork: IBaseUnitOfWork,
+        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: UpdateUserEmailInput): Promise<UpdateUserEmailOutput> {
@@ -94,14 +96,14 @@ export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, Update
 
 
         // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.EMAIL_UPDATE_VERIFICATION({fullname: userUpdated.fullname, token: validationToken.value})
+        const mailContent = mailTemplates.EMAIL_UPDATE_VERIFICATION({ fullname: userUpdated.fullname, token: validationToken.value })
 
 
         // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE UPDATE IS COMPLETED 
         try {
-            await this.mailService.sendEmail({to: userUpdated.email.value, subject: mailContent.subject, body: mailContent.body})
+            await this.mailService.sendEmail({ to: userUpdated.email.value, subject: mailContent.subject, body: mailContent.body })
         } catch (error) {
-            console.error(`[UpdateEmailCase]: SMTP Failure for ${userUpdated.email.value}`, error)
+            this.logger.error('Failed to send email update verification', error, { email: userUpdated.email.value, userId: userAccount.publicId.value })
         }
 
 

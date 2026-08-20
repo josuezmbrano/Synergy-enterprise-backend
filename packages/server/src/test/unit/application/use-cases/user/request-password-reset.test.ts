@@ -1,3 +1,4 @@
+import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { RequestPasswordResetCase } from 'application/use-cases/user/request-password-reset.usecase.js'
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js'
@@ -17,6 +18,7 @@ describe('RequestPasswordCase.', () => {
     let mockTokenRepository: MockProxy<ITokenRepository>
     let mockMailService: MockProxy<IMailService>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
+    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -25,10 +27,11 @@ describe('RequestPasswordCase.', () => {
         mockTokenRepository = mock<ITokenRepository>()
         mockMailService = mock<IMailService>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
+        mockLogger = mock<LoggerPort>()
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
 
-        sut = new RequestPasswordResetCase(mockUserRepository, mockTokenRepository, mockMailService, mockUnitOfWork)
+        sut = new RequestPasswordResetCase(mockUserRepository, mockTokenRepository, mockMailService, mockUnitOfWork, mockLogger)
     })
 
 
@@ -78,7 +81,7 @@ describe('RequestPasswordCase.', () => {
             mockUserRepository.findByEmail.mockResolvedValue(user)
             mockTokenRepository.findByUser.mockResolvedValue(oldToken)
 
-            vi.spyOn(oldToken, 'ensureEmailCooldown').mockImplementation(() => {})
+            vi.spyOn(oldToken, 'ensureEmailCooldown').mockImplementation(() => { })
 
             await sut.execute({ email: user.email.value })
 
@@ -88,15 +91,26 @@ describe('RequestPasswordCase.', () => {
             expect(mockMailService.sendEmail).toHaveBeenCalled()
         })
 
-        it('should execute email service even if it fails without throwing', async () => {
+        it('should return success, log warning and complete execution even if mail service fails', async () => {
             const user = UserMother.reconstituteDefault()
+            const mailError = new Error('SMTP Down')
+
             mockUserRepository.findByEmail.mockResolvedValue(user)
-            mockMailService.sendEmail.mockRejectedValue(new Error('SMTP Down'))
+            mockMailService.sendEmail.mockRejectedValue(mailError)
 
             const result = await sut.execute({ email: user.email.value })
 
             expect(result.success).toBe(true)
             expect(mockTokenRepository.saveToken).toHaveBeenCalled()
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.any(String),
+                mailError,
+                {
+                    email: user.email.value,
+                    userId: user.publicId.value
+                }
+            )
         })
     })
 

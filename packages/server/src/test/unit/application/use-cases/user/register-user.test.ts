@@ -1,3 +1,4 @@
+import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js'
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js'
@@ -19,6 +20,7 @@ describe('RegisterUserCase.', () => {
     let mockAuthService: MockProxy<IAuthService>
     let mockMailService: MockProxy<IMailService>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
+    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -28,10 +30,11 @@ describe('RegisterUserCase.', () => {
         mockAuthService = mock<IAuthService>()
         mockMailService = mock<IMailService>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
+        mockLogger = mock<LoggerPort>()
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
 
-        sut = new RegisterUserCase(mockUserRepository, mockPasswordHasher, mockAuthService, mockTokenRepository, mockMailService, mockUnitOfWork)
+        sut = new RegisterUserCase(mockUserRepository, mockPasswordHasher, mockAuthService, mockTokenRepository, mockMailService, mockUnitOfWork, mockLogger)
     })
 
 
@@ -80,12 +83,14 @@ describe('RegisterUserCase.', () => {
         it('should execute successfully even if the mail service fails (Resilience Rule)', async () => {
 
             const newUser = UserMother.create()
+            const mailError = new Error('SMTP Connection Timeout')
+
             mockUserRepository.usernameExists.mockResolvedValue(false)
             mockUserRepository.emailExists.mockResolvedValue(false)
             mockPasswordHasher.hash.mockResolvedValue('hash_fake')
             mockAuthService.generateToken.mockResolvedValue('session_token_123')
 
-            mockMailService.sendEmail.mockRejectedValue(new Error('SMTP Connection Timeout'))
+            mockMailService.sendEmail.mockRejectedValue(mailError)
             mockUserRepository.save.mockResolvedValue(newUser)
 
             const input = {
@@ -101,6 +106,15 @@ describe('RegisterUserCase.', () => {
             expect(result.token).toBe('session_token_123')
             expect(mockUserRepository.save).toHaveBeenCalled()
             expect(mockTokenRepository.saveToken).toHaveBeenCalled()
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.any(String),
+                mailError,
+                {
+                    email: newUser.email.value,
+                    userId: newUser.publicId.value
+                }
+            )
         })
 
         it('should return output with expected DTO format and generate session token', async () => {

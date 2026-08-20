@@ -2,10 +2,11 @@ import dotenv from 'dotenv';
 import path from 'path';
 import z from "zod";
 import { envSchema } from "./env.schema.js";
+import { bootstrapLogger } from './modules/logger.config.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), 'packages/server/.env') });
 
-dotenv.config(); 
+dotenv.config();
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
@@ -14,8 +15,7 @@ const parseEnv = () => {
 
   if (!result.success) {
     const tree = z.treeifyError(result.error)
-    console.error('❌ Environment variables validation error')
-    console.error(JSON.stringify(tree, null, 2))
+    bootstrapLogger.error({ validationErrorTree: tree }, '❌ Environment variables validation error')
 
     process.exit(1)
   }

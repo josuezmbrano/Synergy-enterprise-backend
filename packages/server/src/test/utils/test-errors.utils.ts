@@ -1,4 +1,7 @@
 import { BaseDomainError } from 'core/errors/base-domain.error.js'
+import { containerDI } from 'infrastructure/container/di.config.js'
+
+const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
 export interface ErrorMetadata {
     field: string
@@ -30,7 +33,7 @@ export const expectDomainError = <T extends BaseDomainError>(
             return
         }
 
-        console.log(error)
+        pinoLogger.error('Something went wrong', error)
         throw(error)
     }
 }

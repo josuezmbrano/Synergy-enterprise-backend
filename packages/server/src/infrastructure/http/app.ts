@@ -17,6 +17,7 @@ import { containerDI } from 'infrastructure/container/di.config.js'
 import { validateRequest } from './middlewares/validate-request.middleware.js'
 import { InviteToProjectBodySchema } from '@project/common/schemas/invitation.schema.js'
 import { healthRoutes } from './routes/health.routes.js'
+import { correlationMiddleware } from './middlewares/correlation-middleware.js'
 
 
 const app = express()
@@ -37,6 +38,9 @@ app.get('/', (_req: Request, res: Response) => {
 
 // HEALTH CHECKS (INFRASTRUCTURE PROBES)
 app.use('/health', healthRoutes)
+
+// CORRELATION MIDDLEWARE
+app.use(correlationMiddleware)
 
 // ROUTER ASSEMBLY
 app.use('/api/v1/auth', authRouter)

@@ -22,7 +22,8 @@ describe('RegisterUserCase - Integration Tests', () => {
             containerDI.services.jwtAuthService,
             containerDI.repositories.verificationTokenRepository,
             containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork
+            containerDI.transactionalCoordinator.unitOfWork,
+            containerDI.loggerMonitorInstance.pinoLogger
         );
     });
 

@@ -158,7 +158,6 @@ describe('FindAllProjectsCase - Integration Tests', () => {
             expect(result.projects.length).toBe(2);
 
             const projectIdsResult = result.projects.map(p => p.id);
-            console.log(projectIdsResult)
             expect(projectIdsResult).toContain(dbProject1.publicId.value);
             expect(projectIdsResult).toContain(dbProject2.publicId.value);
             expect(projectIdsResult).not.toContain(dbProject3.publicId.value);

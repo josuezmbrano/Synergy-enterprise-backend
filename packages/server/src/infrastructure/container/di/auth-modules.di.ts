@@ -20,9 +20,9 @@ import { VerifyEmailController } from 'infrastructure/http/controllers/auth/veri
 
 // USE CASES INSTANTIATION
 const loginUserUseCase = new LoginUserCase(containerDI.repositories.userRepository, containerDI.services.bcryptPasswordHasher, containerDI.services.jwtAuthService)
-const registerUserUseCase = new RegisterUserCase(containerDI.repositories.userRepository, containerDI.services.bcryptPasswordHasher, containerDI.services.jwtAuthService, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork)
-const requestPasswordResetUseCase = new RequestPasswordResetCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork)
-const resendEmailVerificationUseCase = new ResendEmailVerificationCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork)
+const registerUserUseCase = new RegisterUserCase(containerDI.repositories.userRepository, containerDI.services.bcryptPasswordHasher, containerDI.services.jwtAuthService, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork, containerDI.loggerMonitorInstance.pinoLogger)
+const requestPasswordResetUseCase = new RequestPasswordResetCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork, containerDI.loggerMonitorInstance.pinoLogger)
+const resendEmailVerificationUseCase = new ResendEmailVerificationCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork, containerDI.loggerMonitorInstance.pinoLogger)
 const resetPasswordUseCase = new ResetPasswordCase(containerDI.repositories.verificationTokenRepository, containerDI.repositories.userRepository, containerDI.services.bcryptPasswordHasher, containerDI.transactionalCoordinator.unitOfWork)
 const verifyEmailUseCase = new VerifyEmailCase(containerDI.repositories.verificationTokenRepository, containerDI.repositories.userRepository, containerDI.transactionalCoordinator.unitOfWork)
 

@@ -21,6 +21,7 @@ import { ITokenRepository } from 'core/repositories/token.repository.js';
 import { IMailService } from 'core/services/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
 import { mailTemplates } from 'core/constants/mail-templates.js';
+import { LoggerPort } from 'application/ports/logger.port.js';
 
 export class RegisterUserCase implements BaseUseCase<RegisterUserInput, RegisterUserOutput> {
 
@@ -30,7 +31,8 @@ export class RegisterUserCase implements BaseUseCase<RegisterUserInput, Register
         private readonly authService: IAuthService,
         private readonly tokenRepository: ITokenRepository,
         private readonly mailService: IMailService,
-        private readonly unitOfWork: IBaseUnitOfWork
+        private readonly unitOfWork: IBaseUnitOfWork,
+        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
@@ -87,14 +89,14 @@ export class RegisterUserCase implements BaseUseCase<RegisterUserInput, Register
 
 
         // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.REGISTER_VERIFICATION({fullname: newUserPersisted.fullname, token: validationTokenId.value})
+        const mailContent = mailTemplates.REGISTER_VERIFICATION({ fullname: newUserPersisted.fullname, token: validationTokenId.value })
 
 
         // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE SIGNUP IS COMPLETED 
         try {
-            await this.mailService.sendEmail({to: newUserPersisted.email.value, subject: mailContent.subject, body: mailContent.body})
+            await this.mailService.sendEmail({ to: newUserPersisted.email.value, subject: mailContent.subject, body: mailContent.body })
         } catch (error) {
-            console.error(`[RegisterUserCase]: Registration email failed for ${newUserPersisted.email.value}:`, error)
+            this.logger.error('Failed to send registration email', error, { email: newUserPersisted.email.value, userId: newUserPersisted.publicId.value })
         }
 
 

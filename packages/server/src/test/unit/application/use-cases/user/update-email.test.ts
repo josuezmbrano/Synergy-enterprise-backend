@@ -1,3 +1,4 @@
+import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { UpdateEmailCase } from 'application/use-cases/user/update-email.usecase.js'
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js'
@@ -23,6 +24,7 @@ describe('UpdateEmailCase', () => {
     let mockAuthService: MockProxy<IAuthService>
     let mockMailService: MockProxy<IMailService>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
+    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -33,10 +35,11 @@ describe('UpdateEmailCase', () => {
         mockAuthService = mock<IAuthService>()
         mockMailService = mock<IMailService>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
+        mockLogger = mock<LoggerPort>()
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
 
-        sut = new UpdateEmailCase(mockUserRepository, mockTokenRepository, mockPasswordHasher, mockAuthService, mockMailService, mockUnitOfWork)
+        sut = new UpdateEmailCase(mockUserRepository, mockTokenRepository, mockPasswordHasher, mockAuthService, mockMailService, mockUnitOfWork, mockLogger)
     })
 
 
@@ -114,7 +117,7 @@ describe('UpdateEmailCase', () => {
             mockUserRepository.findByPublicId.mockResolvedValue(user)
             mockPasswordHasher.compare.mockResolvedValue(true)
             mockUserRepository.emailExists.mockResolvedValue(false)
-            mockTokenRepository.findByUser.mockResolvedValue(null) 
+            mockTokenRepository.findByUser.mockResolvedValue(null)
             mockAuthService.generateToken.mockResolvedValue('asdjasd213asdj')
             mockUserRepository.save.mockResolvedValue(user)
 
@@ -134,6 +137,8 @@ describe('UpdateEmailCase', () => {
 
         it('should remain resilient and complete execution if the mail service fails', async () => {
             const user = UserMother.reconstituteDefault()
+            const mailError = new Error('SMTP Error')
+
             mockUserRepository.findByPublicId.mockResolvedValue(user)
             mockPasswordHasher.compare.mockResolvedValue(true)
             mockUserRepository.emailExists.mockResolvedValue(false)
@@ -146,6 +151,15 @@ describe('UpdateEmailCase', () => {
             const results = await sut.execute(input)
             expect(results.user.email).toBe('new@email.com')
             expect(mockUserRepository.save).toHaveBeenCalled()
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                'Failed to send email update verification',
+                mailError,
+                {
+                    email: 'new@email.com',
+                    userId: user.publicId.value
+                }
+            )
         })
     })
 

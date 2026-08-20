@@ -11,6 +11,7 @@ import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
 import { mailTemplates } from 'core/constants/mail-templates.js';
+import { LoggerPort } from 'application/ports/logger.port.js';
 
 
 export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordResetInput, RequestPasswordResetOutput> {
@@ -19,7 +20,8 @@ export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordRese
         private readonly userRepository: IUserRepository,
         private readonly tokenRepository: ITokenRepository,
         private readonly mailService: IMailService,
-        private readonly unitOfWork: IBaseUnitOfWork
+        private readonly unitOfWork: IBaseUnitOfWork,
+        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: RequestPasswordResetInput): Promise<RequestPasswordResetOutput> {
@@ -66,7 +68,7 @@ export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordRese
         try {
             await this.mailService.sendEmail({ to: actingUserEmail.value, subject: mailContent.subject, body: mailContent.body })
         } catch (error) {
-            console.error(`[RequestPasswordResetCase]: Mail delivery failed for ${actingUserEmail.value}`, error)
+            this.logger.error('Failed to send password reset email verification', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
         }
 
 

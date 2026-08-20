@@ -22,6 +22,11 @@ export const envSchema = z.object({
         z.string({ error: 'JWT_SECRET is required' })
             .min(32, 'JWT_SECRET must be at least 32 characters long for minimum security'),
 
+    // LOGGER LEVELS
+    LOG_LEVEL:
+        z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+        .default('info'),
+
     // EXTERNAL PROVIDERS
     RESEND_API_KEY:
         z.string({ error: 'RESEND_API_KEY is required' })

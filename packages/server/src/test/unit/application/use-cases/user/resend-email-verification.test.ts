@@ -1,3 +1,4 @@
+import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { ResendEmailVerificationCase } from 'application/use-cases/user/resend-email-verification.usecase.js'
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js'
@@ -18,6 +19,7 @@ describe('ResendEmailVerificationCase.', () => {
     let mockTokenRepository: MockProxy<ITokenRepository>
     let mockMailService: MockProxy<IMailService>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
+    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -26,9 +28,10 @@ describe('ResendEmailVerificationCase.', () => {
         mockTokenRepository = mock<ITokenRepository>()
         mockMailService = mock<IMailService>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
+        mockLogger = mock<LoggerPort>()
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
-        sut = new ResendEmailVerificationCase(mockUserRepository, mockTokenRepository, mockMailService, mockUnitOfWork)
+        sut = new ResendEmailVerificationCase(mockUserRepository, mockTokenRepository, mockMailService, mockUnitOfWork, mockLogger)
     })
 
     describe('Validate acting user and account status (PHASE 1)', () => {
@@ -108,25 +111,36 @@ describe('ResendEmailVerificationCase.', () => {
         it('should return success even if mail service fails', async () => {
 
             const user = UserMother.createPending()
-            mockUserRepository.findByPublicId.mockResolvedValue(user)
+            const mailError = new Error('SMTP Error')
             
+            mockUserRepository.findByPublicId.mockResolvedValue(user)
+
             mockMailService.sendEmail.mockRejectedValue(new Error('SMTP Error'))
 
             const result = await sut.execute({ userId: user.publicId.value })
 
-            expect(result.success).toBe(true) 
-            expect(mockTokenRepository.saveToken).toHaveBeenCalled() 
+            expect(result.success).toBe(true)
+            expect(mockTokenRepository.saveToken).toHaveBeenCalled()
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.any(String), // Captura cualquier mensaje que le hayas puesto, ej: 'Failed to resend email verification'
+                mailError,
+                {
+                    email: user.email.value,
+                    userId: user.publicId.value
+                }
+            )
         })
 
         it('should execute the entire orchestration correctly in a happy path', async () => {
 
             const user = UserMother.createPending()
             const oldToken = TokenMother.createEmailVerification()
-            
+
             mockUserRepository.findByPublicId.mockResolvedValue(user)
             mockTokenRepository.findByUser.mockResolvedValue(oldToken)
-            
-            vi.spyOn(oldToken, 'ensureEmailCooldown').mockImplementation(() => {})
+
+            vi.spyOn(oldToken, 'ensureEmailCooldown').mockImplementation(() => { })
 
             await sut.execute({ userId: user.publicId.value })
 

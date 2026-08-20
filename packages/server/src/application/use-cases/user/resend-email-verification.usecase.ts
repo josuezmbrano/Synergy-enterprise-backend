@@ -12,6 +12,7 @@ import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js'
 import { IMailService } from 'core/services/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
 import { mailTemplates } from 'core/constants/mail-templates.js';
+import { LoggerPort } from 'application/ports/logger.port.js';
 
 
 export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerificationInput, ResendEmailVerificationOutput> {
@@ -20,7 +21,8 @@ export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerif
         private readonly userRepository: IUserRepository,
         private readonly tokenRepository: ITokenRepository,
         private readonly mailService: IMailService,
-        private readonly unitOfWork: IBaseUnitOfWork
+        private readonly unitOfWork: IBaseUnitOfWork,
+        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: ResendEmailVerificationInput): Promise<ResendEmailVerificationOutput> {
@@ -56,16 +58,16 @@ export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerif
             await this.tokenRepository.saveToken(verificationToken)
         })
 
-        
+
         // THIS STRUCTURES THE EMAIL TEMPLATE FOR THE MAIL SERVICE
-        const mailContent = mailTemplates.RESEND_EMAIL_VERIFICATION({fullname: userAccount.fullname, token: verificationTokenId.value})
+        const mailContent = mailTemplates.RESEND_EMAIL_VERIFICATION({ fullname: userAccount.fullname, token: verificationTokenId.value })
 
 
         try {
             // SAVE AND SEND TOKEN TO USER EMAIL
-            await this.mailService.sendEmail({to: userAccount.email.value, ...mailContent})
+            await this.mailService.sendEmail({ to: userAccount.email.value, ...mailContent })
         } catch (error) {
-            console.error(`[ResendEmailVerificationCase]: SMTP Failure for ${userAccount.email.value}`, error)
+            this.logger.error('Failed to send verification email', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
         }
 
 

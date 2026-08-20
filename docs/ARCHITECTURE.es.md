@@ -169,6 +169,21 @@ Ante señales del sistema operativo (`SIGINT` de consola o `SIGTERM` del orquest
 
 > **Nota de Infraestructura:** El servidor Node.js se mantiene en HTTP plano para operar detrás de un Reverse Proxy o Load Balancer con *TLS Termination* (e.g., Nginx, Cloudflare, AWS ALB).
 
+### Observabilidad y Trazabilidad de Peticiones
+El sistema implementa un esquema de observabilidad agnóstico y desacoplado del framework de logging subyacente mediante el patrón Adapter.
+
+#### Componentes Clave:
+
+* **`LoggerPort` (Application Layer):** Contrato que define los métodos estándar de registro (`info`, `warn`, `error`, `debug`, `child`). La capa de aplicación y los casos de uso dependen exclusivamente de esta abstracción.
+* **`PinoLoggerAdapter` (Infrastructure Layer):** Implementación concreta que adapta la librería `Pino` al contrato `LoggerPort`. Maneja la serialización de instancias de `Error` bajo la clave `err` y formatea la salida estructurada en JSON.
+* **`requestContext` (AsyncLocalStorage):** Almacenamiento en contexto de ejecución asíncrona de Node.js. Permite propagar metadatos implícitos —como el `requestId` generado en la capa HTTP— a lo largo de todas las capas de la aplicación sin contaminación de firmas de métodos.
+
+#### Comportamiento del logger
+
+* **Desarrollo:** Los logs se formatean con pino-pretty para facilitar la lectura en consola (timestamps locales, colores y bloques de contexto).
+* **Produccion:** Salida en JSON estructurado de alto rendimiento, optimizada para recolectores como Datadog, Grafana Loki o CloudWatch.
+* **Testing:** Desactivado automáticamente (silent) para mantener limpia la salida de Vitest.
+
 ---
 
 ## 6. ARCHITECTURAL DECISION RECORDS (ADRs)
@@ -228,3 +243,9 @@ Además, los *integration tests* que utilizan contenedores dinámicos (*Testcont
 - **Decisión:** Implementar una estrategia de salud desacoplada en dos niveles bajo /health. /liveness verifica métricas del proceso (rssMB, heapUsedMB, uptime) sin dependencias externas. /readiness ejecuta un DatabasePinger aislado (SELECT 1) limitado por un timeout estricto de 2000ms mediante Promise.race y limpieza con clearTimeout en finally.
 - **Consecuencias Positivas:** Evita bucles de reinicio en cascada de contenedores durante caídas de la base de datos al pausar temporalmente el tráfico en lugar de destruir instancias. Elimina fugas de memoria (timer leaks) bajo monitoreo de alta frecuencia.
 - **Trade-offs:** Incrementa ligeramente la complejidad del enrutamiento al requerir controladores dedicados y abstracciones para el pinger.
+
+### ADR 010: Adopción de AsyncLocalStorage y Logger Agnóstico para Observabilidad
+* **Contexto:** Para rastrear peticiones concurrentes a través de controladores, casos de uso, repositorios y servicios externos, necesitábamos asociar un identificador único (`requestId`) a cada registro de log. Pasar manualmente el `requestId` como parámetro en cada función del dominio y aplicación generaba acoplamiento innecesario y contaminación de firmas (*signature pollution*).
+* **Decisión:** Utilizar `AsyncLocalStorage` de Node.js para mantener el contexto de la petición (`requestId`) de forma asíncrona e implícita. Inyectar `LoggerPort` mediante Inversión de Dependencias en los Casos de Uso que requieran resiliencia (ej. fallos en servicios de notificación que no deben abortar la transacción principal).
+* **Consecuencias Positivas:** Peticiones 100% trazables en entornos distribuidos; los Casos de Uso no conocen el framework de logging; refactorización limpia sin alterar firmas de métodos.
+* **Trade-offs:** Ligero sobrecosto de memoria por el contexto asíncrono, mitigado por el alto rendimiento nativo del API `async_hooks` en Node.js moderno.

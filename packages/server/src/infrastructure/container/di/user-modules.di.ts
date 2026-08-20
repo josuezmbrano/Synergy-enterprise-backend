@@ -15,7 +15,7 @@ import { UpdateProfileController } from 'infrastructure/http/controllers/user/up
 
 // USE CASES INSTANTIATION
 const findUserUseCase = new FindUserCase(containerDI.repositories.userRepository)
-const updateEmailUseCase = new UpdateEmailCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.bcryptPasswordHasher, containerDI.services.jwtAuthService, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork)
+const updateEmailUseCase = new UpdateEmailCase(containerDI.repositories.userRepository, containerDI.repositories.verificationTokenRepository, containerDI.services.bcryptPasswordHasher, containerDI.services.jwtAuthService, containerDI.services.mailService, containerDI.transactionalCoordinator.unitOfWork, containerDI.loggerMonitorInstance.pinoLogger)
 const updatePasswordUseCase = new UpdatePasswordCase(containerDI.repositories.userRepository, containerDI.services.bcryptPasswordHasher)
 const updateProfileUseCase = new UpdateProfileCase(containerDI.repositories.userRepository)
 

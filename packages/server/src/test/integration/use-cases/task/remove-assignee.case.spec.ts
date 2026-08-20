@@ -182,8 +182,6 @@ describe('RemoveAssigneeCase - Integration Tests', () => {
                 targetMemberId: developerPrimitives.publicId
             });
 
-            console.log(developerPrimitives.id)
-
             expect(result.assignedTo).toBeNull();
 
             const dbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });

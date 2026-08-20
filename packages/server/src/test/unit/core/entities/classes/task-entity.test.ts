@@ -569,7 +569,6 @@ describe('TaskEntityClass creation, methods testing and core logic.', () => {
 
                 taskEntity.markAsOverdue()
                 expect(taskEntity.status.isOverDue()).toBe(true)
-                console.log(taskEntity.status.value)
                 expect(taskEntity.priority.isCritical()).toBe(true)
                 expect(taskEntity.updatedAtDate.value.getTime()).toBeGreaterThan(previousUpdatedAt)
             })

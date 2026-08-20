@@ -172,6 +172,21 @@ Upon receiving operating system termination signals (`SIGINT` from terminal or `
 
 > **Infrastructure Note:** The Node.js server operates over plain HTTP to leverage TLS Termination at the Reverse Proxy or Load Balancer level (e.g., Nginx, Cloudflare, AWS ALB).
 
+### Observability and Request Traceability
+The system implements an agnostic observability design decoupled from the underlying logging framework via the Adapter Pattern.
+
+#### Key Components:
+
+* **`LoggerPort` (Application Layer):** Contract defining standard logging methods (`info`, `warn`, `error`, `debug`, `child`). The application layer and use cases depend strictly on this abstraction.
+* **`PinoLoggerAdapter` (Infrastructure Layer):** Concrete implementation adapting the `Pino` library to the `LoggerPort` contract. Handles serialization of `Error` instances under the `err` key and formats JSON structured outputs.
+* **`requestContext` (AsyncLocalStorage):** Node.js asynchronous execution context store. Allows implicit propagation of request metadata—such as the `requestId` generated at the HTTP layer—across all application layers without polluting method signatures.
+
+#### Logger Behavior:
+
+* **Development:** Logs are formatted using pino-pretty for terminal readability (local timestamps, color highlights, and context blocks).
+* **Production:** High-performance structured JSON output, optimized for log aggregators like Datadog, Grafana Loki, or CloudWatch.
+* **Testing:** Muted automatically (silent) to maintain a clean Vitest output.
+
 ---
 
 ## 6. ARCHITECTURAL DECISION RECORDS (ADRs)
@@ -230,3 +245,9 @@ Additionally, integration tests using dynamic containers (Testcontainers) inject
 - **Decision:** Implement a decoupled two-tiered health strategy under /health. /liveness checks process metrics (rssMB, heapUsedMB, uptime) without external dependencies. /readiness executes an isolated DatabasePinger (SELECT 1) capped by a strict 2000ms Promise.race timeout with clearTimeout cleanup in finally.
 - **Positive Consequences:** Prevents cascading container restart loops during database outages by temporarily pausing traffic instead of killing instances. Eliminates Node.js timer leaks under high-frequency polling.
 - **Trade-offs:** Slightly increases routing setup complexity by requiring separate controllers and pinger abstractions.
+
+### ADR-010: Adoption of AsyncLocalStorage and Agnostic Logger for Observability
+* **Context:** To trace concurrent requests across controllers, use cases, repositories, and external services, we needed to correlate a unique identifier (`requestId`) with every log entry. Passing `requestId` manually as an argument through domain and application functions caused unnecessary coupling and signature pollution.
+* **Decision:** Use Node.js `AsyncLocalStorage` to maintain request context (`requestId`) implicitly and asynchronously. Inject `LoggerPort` via Dependency Inversion into Use Cases requiring resilience (e.g., non-critical notification failures that must not roll back main business transactions).
+* **Positive Consequences:** 100% traceable requests in distributed environments; Use Cases remain ignorant of the underlying logger library; clean refactoring without modifying method signatures.
+* **Trade-offs** Slight memory overhead from async context tracking, mitigated by the high native performance of the `async_hooks` API in modern Node.js.

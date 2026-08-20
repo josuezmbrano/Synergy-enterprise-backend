@@ -30,7 +30,8 @@ describe('UpdateEmailCase - Integration Tests', () => {
             containerDI.services.bcryptPasswordHasher,
             containerDI.services.jwtAuthService,
             containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork
+            containerDI.transactionalCoordinator.unitOfWork,
+            containerDI.loggerMonitorInstance.pinoLogger
         );
     });
 
