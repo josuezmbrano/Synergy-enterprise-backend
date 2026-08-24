@@ -1,21 +1,43 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
+        "baseUrl": ".",
         "rootDir": "./src",
+        "outDir": "./dist",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo",
         "paths": {
             "@project/common": [
                 "../common/dist/index.js"
             ],
             "@project/common/*": [
                 "../common/dist/*"
-            ]
+            ],
+            "core/*": [
+                "src/core/*"
+            ],
+            "application/*": [
+                "src/application/*"
+            ],
+            "infrastructure/*": [
+                "src/infrastructure/*"
+            ],
         }
     },
+    "references": [
+        {
+            "path": "../common"
+        }
+    ],
+    "include": [
+        "src/**/*"
+    ],
     "exclude": [
         "node_modules",
         "dist",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
-        "src/test/**/*"
+        "src/test/**/*",
+        "./prisma.config.ts",
+        "./vitest.config.ts"
     ]
 }

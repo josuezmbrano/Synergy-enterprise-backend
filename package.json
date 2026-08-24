@@ -7,7 +7,6 @@
   "scripts": {
     "dev:server": "dotenv -e .env -- pnpm --filter @project/server dev",
     "dev:client": "pnpm --filter @project/client dev",
-    
     "build:all": "pnpm -r build"
   },
   "keywords": [],
