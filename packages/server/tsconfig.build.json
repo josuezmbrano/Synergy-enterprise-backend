@@ -7,7 +7,7 @@
         "tsBuildInfoFile": "./dist/.tsbuildinfo",
         "paths": {
             "@project/common": [
-                "../common/dist/index.js"
+                "../common/dist/index.d.ts"
             ],
             "@project/common/*": [
                 "../common/dist/*"
