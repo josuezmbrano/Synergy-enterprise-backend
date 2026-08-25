@@ -39,10 +39,43 @@ jobs:
     
       - name: Typecheck
         run: pnpm typecheck
- 
+
+  testing:
+    name: Quality layer (Testing)
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node JS
+        uses: actions/setup-node@v7
+        with: 
+            node-version: 24
+            cache: 'pnpm'
+
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y openssl
+    
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @project/server run prisma:generate
+
+      - name: Unit testing
+        run: pnpm --filter @project/server test:unit
+      
+      - name: Integration testing
+        run: pnpm --filter @project/server test:integration
+
   docker:
     name: Docker Build & Verify
-    needs: validate
+    needs: testing
     runs-on: ubuntu-latest
 
     steps:
