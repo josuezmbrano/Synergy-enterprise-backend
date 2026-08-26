@@ -1,8 +1,20 @@
 import { UserDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('UsernameVo creation, validation and prop testing', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     it('must create an username value object if all validations and requirements are correct', () => {
 

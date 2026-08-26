@@ -8,12 +8,21 @@ import { TaskDescriptionVo } from 'core/value-objects/task/task-description.vo.j
 import { TaskObjectiveVo } from 'core/value-objects/task/task-objective.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('UpdateTaskInfoCase - Integration Tests', () => {
     let useCase: UpdateTaskInfoCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -22,12 +31,7 @@ describe('UpdateTaskInfoCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateTaskInfoCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.updateTaskInfoUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -45,7 +49,7 @@ describe('UpdateTaskInfoCase - Integration Tests', () => {
         it('should throw taskNotFound if the taskId does not exist', async () => {
             // Seed a legitimate actor record to pass the initial identity guard layer safely
             const actor = await seedUserRandom(prisma);
-            
+
             // Dispatch an operation containing an unmapped task UUID to force an infrastructure lookup failure
             const execution = useCase.execute({
                 actorId: actor.toPrimitives().publicId,
@@ -169,7 +173,7 @@ describe('UpdateTaskInfoCase - Integration Tests', () => {
             });
 
             expect(result.objective).toBe('Brand New Title');
-            expect(result.description).toBe('Keep This Description'); 
+            expect(result.description).toBe('Keep This Description');
         });
     });
 

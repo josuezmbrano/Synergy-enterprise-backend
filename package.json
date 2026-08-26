@@ -5,10 +5,14 @@
   "description": "Project Management System Backend",
   "main": "index.js",
   "scripts": {
-    "dev:server": "dotenv -e .env -- pnpm --filter @project/server dev",
-    "dev:client": "pnpm --filter @project/client dev",
-    "typecheck": "pnpm -r typecheck",
-    "build:all": "pnpm -r build"
+    "dev:server": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server dev",
+    "start:server": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server start",
+    "server:prisma-generate": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server prisma:generate",
+    "test:unit": "pnpm --filter @project/server test:unit",
+    "test:integration": "pnpm --filter @project/server test:integration",
+    "build:all": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck:all",
+    "typecheck:build": "pnpm -r typecheck:build"
   },
   "keywords": [],
   "author": "",

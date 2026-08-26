@@ -8,12 +8,22 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PrismaMemberRepository } from 'infrastructure/repositories/member.prisma.js';
 import { seedMemberDefault, seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('PrismaMemberRepository - Integration Tests', () => {
     let memberRepository: PrismaMemberRepository;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 

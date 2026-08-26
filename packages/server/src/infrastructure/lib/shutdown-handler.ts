@@ -1,13 +1,14 @@
 import { Server } from "http";
-import { containerDI } from "infrastructure/container/di.config.js";
+import { LoggerMonitor } from "infrastructure/container/di.config.js";
 
-const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
-export const registerGracefulShutdown = (server: Server, onShutdown: () => Promise<void>, timeoutMs: number = 10000): void => {
+export const registerGracefulShutdown = (server: Server, onShutdown: () => Promise<void>, logger: LoggerMonitor, timeoutMs: number = 10000): void => {
+
+    const pinoLogger = logger.pinoLogger
 
     let isShuttingDown = false
 
-    const handleSignal = (signal: NodeJS.Signals) => {
+    const handleSignal = async (signal: NodeJS.Signals) => {
 
         if (isShuttingDown) {
             pinoLogger.warn('Shutdown already in progress. Ignoring duplicate signal', { signal })
@@ -22,21 +23,28 @@ export const registerGracefulShutdown = (server: Server, onShutdown: () => Promi
             process.exit(1)
         }, timeoutMs).unref()
 
-        pinoLogger.info('Closing HTTP server (stopping new incoming traffic)...')
 
-        server.close(async () => {
-
-            try {
-                pinoLogger.info('Closing database connections and cleaning up resources...')
-                await onShutdown();
-                pinoLogger.info('Cleanup completed successfully. Exiting process.')
-                process.exit(0);
-            } catch (error) {
-                pinoLogger.error('Failed to close resources cleanly during shutdown', error)
-                clearTimeout(forceExitTimer)
-                process.exit(1);
+        
+        pinoLogger.info('Closing HTTP server (stopping new incoming traffic)...');
+        server.close((err) => {
+            if (err) {
+                pinoLogger.error('Error closing HTTP server', err);
+            } else {
+                pinoLogger.info('HTTP server closed successfully.');
             }
-        })
+        });
+
+        try {
+            pinoLogger.info('Closing database connections and cleaning up resources...')
+            await onShutdown();
+            pinoLogger.info('Cleanup completed successfully. Exiting process.')
+            process.exit(0);
+        } catch (error) {
+            pinoLogger.error('Failed to close resources cleanly during shutdown', error)
+            process.exit(1);
+        } finally {
+            clearTimeout(forceExitTimer)
+        }
 
     }
 

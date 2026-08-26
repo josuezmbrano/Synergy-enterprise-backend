@@ -6,12 +6,21 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('CreateTaskCase - Integration Tests', () => {
     let useCase: CreateTaskCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -20,12 +29,7 @@ describe('CreateTaskCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new CreateTaskCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.createTaskUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -107,7 +111,7 @@ describe('CreateTaskCase - Integration Tests', () => {
                 dueDate: new Date(Date.now() + 86400000).toISOString()
             });
 
-            
+
             await expect(execution).rejects.toThrow(MemberErrorFactory.memberCreateForbidden().message);
         });
     });
@@ -125,7 +129,7 @@ describe('CreateTaskCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-  
+
             // Isolate a separate Project B workspace container boundary and a foreign account record
             const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('stranger'), email: UserEmailVo.create('stranger@email.com') });
             const projectB = await seedProjectRandom(prisma, stranger.toPrimitives().id);
@@ -138,7 +142,7 @@ describe('CreateTaskCase - Integration Tests', () => {
             const execution = useCase.execute({
                 actingUserId: owner.toPrimitives().publicId,
                 projectId: projectPrimitives.publicId,
-                assigneeMemberId: targetMemberB.toPrimitives().publicId, 
+                assigneeMemberId: targetMemberB.toPrimitives().publicId,
                 objective: 'Asignar tarea cruzada',
                 description: 'Debería lanzar error de desalineación',
                 priority: 'MEDIUM',
@@ -177,7 +181,7 @@ describe('CreateTaskCase - Integration Tests', () => {
                 dueDate: new Date(Date.now() + 86400000).toISOString()
             });
 
-       
+
             await expect(execution).rejects.toThrow(MemberErrorFactory.memberNotActive().message);
         });
     });
@@ -225,7 +229,7 @@ describe('CreateTaskCase - Integration Tests', () => {
             expect(result.priority).toBe('HIGH');
             expect(result.dueDate).toBe(targetDueDate.toISOString());
 
-     
+
             const postDbFetch = await prisma.task.findFirst({ where: { objective: 'Implementar CreateTaskCase' } });
             expect(postDbFetch).toBeTruthy();
             expect(postDbFetch?.status).toBe('TODO');
@@ -247,7 +251,7 @@ describe('CreateTaskCase - Integration Tests', () => {
             const result = await useCase.execute({
                 actingUserId: owner.toPrimitives().publicId,
                 projectId: projectPrimitives.publicId,
-                assigneeMemberId: undefined, 
+                assigneeMemberId: undefined,
                 objective: 'Tarea del Backlog Global',
                 description: 'Nadie la ha tomado aún',
                 priority: 'LOW',

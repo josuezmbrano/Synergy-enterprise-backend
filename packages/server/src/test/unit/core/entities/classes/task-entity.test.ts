@@ -5,10 +5,22 @@ import { TaskDescriptionVo } from 'core/value-objects/task/task-description.vo.j
 import { TaskObjectiveVo } from 'core/value-objects/task/task-objective.vo.js'
 import { TaskPriorityVo } from 'core/value-objects/task/task-priority.vo.js'
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
 import { TaskMother } from 'test/builders/task.mother.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('TaskEntityClass creation, methods testing and core logic.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     describe('Creation, reconstitution testing.', () => {
 

@@ -1,13 +1,20 @@
-import type { Express } from "express"
-import prisma from "infrastructure/lib/prisma.js"
 import { registerGracefulShutdown } from "infrastructure/lib/shutdown-handler.js"
-import { app } from "./app.js"
-import { env } from "infrastructure/config/env.config.js"
-import { containerDI } from "infrastructure/container/di.config.js"
+import { getEnv } from "infrastructure/config/env.config.js"
+import { createContainer } from "infrastructure/container/di.config.js"
+import { createApp } from "./app.js"
 
-const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
-const startServer = (app: Express, port: number) => {
+
+const startServer = () => {
+
+    const env = getEnv()
+    const container = createContainer(env)
+    const app = createApp(container)
+    const prisma = container.prisma
+
+
+    const pinoLogger = container.loggerMonitorInstance.pinoLogger
+    const port = env.PORT
 
     const server = app.listen(port, () => {
         const address = server.address()
@@ -29,8 +36,8 @@ const startServer = (app: Express, port: number) => {
         process.exit(1)
     })
 
-    registerGracefulShutdown(server, async () => await prisma.$disconnect())
+    registerGracefulShutdown(server, async () => await prisma.$disconnect(), container.loggerMonitorInstance)
 }
 
-startServer(app, env.PORT)
+startServer()
 

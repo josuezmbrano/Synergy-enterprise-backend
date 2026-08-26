@@ -3,13 +3,23 @@ import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PrismaVerificationTokenRepository } from 'infrastructure/repositories/token.prisma.js';
 import { TokenMother } from 'test/builders/token.mother.js';
 import { seedTokenDefault, seedTokenRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('PrismaVerificationTokenRepository - Integration Tests', () => {
     let tokenRepository: PrismaVerificationTokenRepository;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -63,7 +73,7 @@ describe('PrismaVerificationTokenRepository - Integration Tests', () => {
 
         it('should throw an InfraError or fail cleanly if trying to delete a token with a mismatched user_id', async () => {
             const user1 = await seedUserRandom(prisma);
-            const user2 = await seedUserRandom(prisma, {username: UserUsernameVo.create('newtokenUsername'), email: UserEmailVo.create('newtokenuseremail@gmail.com')});
+            const user2 = await seedUserRandom(prisma, { username: UserUsernameVo.create('newtokenUsername'), email: UserEmailVo.create('newtokenuseremail@gmail.com') });
 
 
             const token = await seedTokenDefault(prisma, user1.publicId.value);
@@ -127,7 +137,7 @@ describe('PrismaVerificationTokenRepository - Integration Tests', () => {
 
             const user = await seedUserRandom(prisma);
 
-            await seedTokenDefault(prisma, user.publicId.value, { 
+            await seedTokenDefault(prisma, user.publicId.value, {
                 type: TokenTypeVo.createEmailVerification()
             });
 
@@ -140,7 +150,7 @@ describe('PrismaVerificationTokenRepository - Integration Tests', () => {
             expect(foundToken).not.toBeNull();
             expect(foundToken?.id.value).toBe(newToken.id.value);
             expect(foundToken?.userId.value).toBe(user.publicId.value);
-            expect(foundToken?.type.value).toBe('PASSWORD_RESET'); 
+            expect(foundToken?.type.value).toBe('PASSWORD_RESET');
 
             vi.useRealTimers();
         });

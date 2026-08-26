@@ -7,12 +7,21 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('SetCompletedStatusCase - Integration Tests', () => {
     let useCase: SetCompletedStatusCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -21,12 +30,7 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetCompletedStatusCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.setCompletedStatusUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -54,15 +58,15 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
             });
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creator.toPrimitives().id, creator.toPrimitives().id);
 
-          
+
             // Seed a distinct malicious stranger account to simulate an unauthorized security access context
             const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('stranger'), email: UserEmailVo.create('stranger@email.com') });
 
             // Fire request to verify the aggregate strictly obfuscates the error to protect workspace metadata leakage
             const execution = useCase.execute({
-                actorId: stranger.toPrimitives().publicId, 
+                actorId: stranger.toPrimitives().publicId,
                 taskId: task.toPrimitives().publicId,
-                targetMemberId: creator.toPrimitives().publicId 
+                targetMemberId: creator.toPrimitives().publicId
             });
 
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
@@ -81,7 +85,7 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
             });
             const taskAlpha = await seedTaskRandom(prisma, projectAlpha.toPrimitives().id, creatorAlpha.toPrimitives().id, creatorAlpha.toPrimitives().id);
 
-           
+
             // Isolate an independent parallel workspace container (Project Beta) hosting an unrelated member profile
             const ownerBeta = await seedUserRandom(prisma, { username: UserUsernameVo.create('betaowner'), email: UserEmailVo.create('betaowner@email.com') });
             const projectBeta = await seedProjectRandom(prisma, ownerBeta.toPrimitives().id);
@@ -118,7 +122,7 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-       
+
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creator.toPrimitives().id, devAMember.toPrimitives().id, { status: TaskStatusVo.create('REVIEW') });
 
             // Seed an unaligned teammate profile B inside the same project who has no relational bonds to this specific task instance
@@ -130,9 +134,9 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
 
             // Dispatch command targeting teammate B to assert the domain rule prevents completing tasks with mismatched assignment nodes
             const execution = useCase.execute({
-                actorId: owner.toPrimitives().publicId, 
+                actorId: owner.toPrimitives().publicId,
                 taskId: task.toPrimitives().publicId,
-                targetMemberId: devBMember.toPrimitives().publicId 
+                targetMemberId: devBMember.toPrimitives().publicId
             });
 
             await expect(execution).rejects.toThrow();
@@ -157,24 +161,24 @@ describe('SetCompletedStatusCase - Integration Tests', () => {
             });
             const developerPrimitives = developerMember.toPrimitives();
 
-            
+
             // Persist the targeted task aggregate instance with the valid assignee bounds established in an intermediate review state
             const task = await seedTaskRandom(prisma, projectPrimitives.id, developerPrimitives.id, developerPrimitives.id, { status: TaskStatusVo.create('review') });
             const taskPrimitives = task.toPrimitives();
 
             // Run the completion routine under fully satisfied identity, tenant data boundary, and state transitions
             const result = await useCase.execute({
-                actorId: developerUserPrimitives.publicId, 
+                actorId: developerUserPrimitives.publicId,
                 taskId: taskPrimitives.publicId,
-                targetMemberId: developerPrimitives.publicId 
+                targetMemberId: developerPrimitives.publicId
             });
 
-            
-            expect(result.status).toBe('COMPLETED'); 
+
+            expect(result.status).toBe('COMPLETED');
             expect(result.completedAt).not.toBeNull();
             expect(typeof result.completedAt).toBe('string');
 
-           
+
             const dbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });
             expect(dbTask?.status).toBe('COMPLETED');
             expect(dbTask?.completed_at).not.toBeNull();

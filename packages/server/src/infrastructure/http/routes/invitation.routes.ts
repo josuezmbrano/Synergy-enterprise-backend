@@ -1,31 +1,28 @@
 import { Router } from 'express'
-import type { Router as RouterType } from 'express-serve-static-core'
-import { containerDI } from 'infrastructure/container/di.config.js'
-import { invitationModulesContainer } from 'infrastructure/container/di/invitation-modules.di.js'
-
-export const invitationRouter: RouterType = Router()
-
-// Destructured controllers from the DI invitation module container
-const {
-    acceptInvitationController,
-    getAllInvitationsController,
-    getInvitationController,
-    rejectInvitationController
-} = invitationModulesContainer.controllers
-
-// Destructured auth middleware from the DI base tools container
-const { checkAuth } = containerDI.middlewares
+import { MiddlewareModules } from 'infrastructure/container/di.config.js'
+import { InvitationModules } from 'infrastructure/container/di/invitation-modules.di.js'
 
 
-// PROTECT ALL PRIVATE INVITATION ROUTES WITH THE AUTH MIDDLEWARE
-invitationRouter.use(checkAuth.execute)
+
+export const createInvitationRouter = (modules: InvitationModules, middlewares: MiddlewareModules): Router => {
+    const invitationRouter = Router()
+    const { controllers } = modules
+    const { checkAuth } = middlewares
+
+    // PROTECT ALL PRIVATE INVITATION ROUTES WITH THE AUTH MIDDLEWARE
+    invitationRouter.use(checkAuth.execute)
 
 
-// PRIVATE ROUTES
+    // PRIVATE ROUTES
 
-// Invitation collection management
-invitationRouter.get('/', getAllInvitationsController.execute)
-invitationRouter.get('/:invitationId', getInvitationController.execute)
-// State transitions
-invitationRouter.patch('/:invitationId/accept', acceptInvitationController.execute)
-invitationRouter.patch('/:invitationId/reject', rejectInvitationController.execute)
+    // Invitation collection management
+    invitationRouter.get('/', controllers.getAllInvitationsController.execute)
+    invitationRouter.get('/:invitationId', controllers.getInvitationController.execute)
+    // State transitions
+    invitationRouter.patch('/:invitationId/accept', controllers.acceptInvitationController.execute)
+    invitationRouter.patch('/:invitationId/reject', controllers.rejectInvitationController.execute)
+
+    return invitationRouter
+}
+
+

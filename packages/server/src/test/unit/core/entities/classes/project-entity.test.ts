@@ -3,10 +3,22 @@ import { DateVo } from 'core/value-objects/common/date.vo.js'
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js'
 import { ProjectDescriptionVo } from 'core/value-objects/project/project-description.vo.js'
 import { ProjectTitleVo } from 'core/value-objects/project/project-title.vo.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
 import { ProjectMother } from 'test/builders/project.mother.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('ProjectEntityClass creation, methods testing and core logic.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     describe('Creation, reconstitution, and basic calculation testing.', () => {
 

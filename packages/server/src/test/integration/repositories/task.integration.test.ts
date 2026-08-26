@@ -7,13 +7,23 @@ import { TaskIdVo } from 'core/value-objects/common/identifiers/task-id.vo.js';
 import { TaskObjectiveVo } from 'core/value-objects/task/task-objective.vo.js';
 import { TaskPriorityVo } from 'core/value-objects/task/task-priority.vo.js';
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PrismaTaskRepository } from 'infrastructure/repositories/task.prisma.js'
 import { TaskMother } from 'test/builders/task.mother.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskDefault, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('PrismaTaskRepository - Integration Tests', () => {
     let taskRepository: PrismaTaskRepository
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 

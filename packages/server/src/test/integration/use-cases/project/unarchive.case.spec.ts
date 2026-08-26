@@ -5,12 +5,21 @@ import { DateVo } from 'core/value-objects/common/date.vo.js';
 import { ProjectStatusVo } from 'core/value-objects/project/project-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('UnarchiveProjectCase - Integration Tests', () => {
     let useCase: UnarchiveProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -20,11 +29,7 @@ describe('UnarchiveProjectCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UnarchiveProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.project.useCases.unarchiveProjectUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -80,7 +85,7 @@ describe('UnarchiveProjectCase - Integration Tests', () => {
 
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
             expect(spyOnIsMember).toHaveBeenCalled()
-            
+
             vi.restoreAllMocks()
         });
     });
@@ -102,7 +107,7 @@ describe('UnarchiveProjectCase - Integration Tests', () => {
             // Formally attach the manager identity to the directory layout to grant authorized access
             await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id);
 
-            
+
             const preFetchDb = await prisma.project.findUnique({
                 where: { id: projectPrimitives.id }
             });
@@ -122,10 +127,10 @@ describe('UnarchiveProjectCase - Integration Tests', () => {
                 where: { id: projectPrimitives.id }
             });
 
-            expect(postFetchDb?.archived_at).toBeNull(); 
+            expect(postFetchDb?.archived_at).toBeNull();
             expect(postFetchDb?.updated_at).toBeDefined();
             expect(postFetchDb?.status).toBe('PLANNED')
         });
     });
-    
+
 });

@@ -1,4 +1,4 @@
-import { containerDI } from '../di.config.js';
+import { ContainerBase } from '../di.base.js';
 
 // USE CASE IMPORTS
 import { FindAllMembersCase } from 'application/use-cases/member/find-all-members.usecase.js';
@@ -19,44 +19,49 @@ import { SetAdminRoleController } from 'infrastructure/http/controllers/member/s
 import { SetContributorRoleController } from 'infrastructure/http/controllers/member/set-contributor-role.controller.js';
 
 
-// USE CASES INSTANTIATION
-const findAllMembersUseCase = new FindAllMembersCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
-const findMemberUseCase = new FindMemberCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
-const setActiveStatusUseCase = new SetActiveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
-const setInactiveStatusUseCase = new SetInactiveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.taskRepository)
-const setOnLeaveStatusUseCase = new SetOnLeaveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.taskRepository)
-const setAdminRoleUseCase = new SetAdminRoleCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
-const setContributorRoleUseCase = new SetContributorRoleCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
-
-// CONTROLLERS INSTANTIATION
-const findAllMembersController = new FindAllMembersController(findAllMembersUseCase)
-const findMemberController = new FindMemberController(findMemberUseCase)
-const setActiveStatusController = new SetActiveStatusController(setActiveStatusUseCase)
-const setInactiveStatusController = new SetInactiveStatusController(setInactiveStatusUseCase)
-const setOnLeaveStatusController = new SetOnLeaveStatusController(setOnLeaveStatusUseCase)
-const setAdminRoleController = new SetAdminRoleController(setAdminRoleUseCase)
-const setContributorRoleController = new SetContributorRoleController(setContributorRoleUseCase)
 
 
+export const createMemberModules = (containerDI: ContainerBase) => {
 
-export const memberModulesContainer = {
-    useCases: {
-        findAllMembersUseCase,
-        findMemberUseCase,
-        setActiveStatusUseCase,
-        setInactiveStatusUseCase,
-        setOnLeaveStatusUseCase,
-        setAdminRoleUseCase,
-        setContributorRoleUseCase
-    },
-    controllers: {
-        findAllMembersController,
-        findMemberController,
-        setActiveStatusController,
-        setInactiveStatusController,
-        setOnLeaveStatusController,
-        setAdminRoleController,
-        setContributorRoleController
-    }
+    // USE CASES INSTANTIATION
+    const findAllMembersUseCase = new FindAllMembersCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
+    const findMemberUseCase = new FindMemberCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
+    const setActiveStatusUseCase = new SetActiveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
+    const setInactiveStatusUseCase = new SetInactiveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.taskRepository)
+    const setOnLeaveStatusUseCase = new SetOnLeaveStatusCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.taskRepository)
+    const setAdminRoleUseCase = new SetAdminRoleCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
+    const setContributorRoleUseCase = new SetContributorRoleCase(containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository)
 
-} as const
+    // CONTROLLERS INSTANTIATION
+    const findAllMembersController = new FindAllMembersController(findAllMembersUseCase)
+    const findMemberController = new FindMemberController(findMemberUseCase)
+    const setActiveStatusController = new SetActiveStatusController(setActiveStatusUseCase)
+    const setInactiveStatusController = new SetInactiveStatusController(setInactiveStatusUseCase)
+    const setOnLeaveStatusController = new SetOnLeaveStatusController(setOnLeaveStatusUseCase)
+    const setAdminRoleController = new SetAdminRoleController(setAdminRoleUseCase)
+    const setContributorRoleController = new SetContributorRoleController(setContributorRoleUseCase)
+
+    return {
+        useCases: {
+            findAllMembersUseCase,
+            findMemberUseCase,
+            setActiveStatusUseCase,
+            setInactiveStatusUseCase,
+            setOnLeaveStatusUseCase,
+            setAdminRoleUseCase,
+            setContributorRoleUseCase
+        },
+        controllers: {
+            findAllMembersController,
+            findMemberController,
+            setActiveStatusController,
+            setInactiveStatusController,
+            setOnLeaveStatusController,
+            setAdminRoleController,
+            setContributorRoleController
+        }
+    } as const
+
+}
+
+export type MemberModules = ReturnType<typeof createMemberModules>

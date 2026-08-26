@@ -4,12 +4,21 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedTokenDefault, seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('ResetPasswordCase - Integration Tests', () => {
     let useCase: ResetPasswordCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         vi.useRealTimers();
@@ -20,12 +29,7 @@ describe('ResetPasswordCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new ResetPasswordCase(
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.repositories.userRepository,
-            containerDI.services.bcryptPasswordHasher,
-            containerDI.transactionalCoordinator.unitOfWork
-        );
+        useCase = containerDI.modules.auth.useCases.resetPasswordUseCase
     });
 
     describe('Token Validations & Preconditions', () => {
@@ -126,7 +130,7 @@ describe('ResetPasswordCase - Integration Tests', () => {
 
             await expect(execution).rejects.toThrow('Database write deadlock');
 
-            const tokenStillExists = await prisma.verificationToken.findFirst({ where: { token: token.id.value} });
+            const tokenStillExists = await prisma.verificationToken.findFirst({ where: { token: token.id.value } });
             expect(tokenStillExists).toBeDefined();
 
             const userInDb = await prisma.user.findUnique({ where: { id: primitives.id } });

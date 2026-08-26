@@ -6,14 +6,23 @@ import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedTokenDefault, seedUserDefault, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('UpdateEmailCase - Integration Tests', () => {
     let useCase: UpdateEmailCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         vi.useRealTimers();
@@ -24,15 +33,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateEmailCase(
-            containerDI.repositories.userRepository,
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.services.bcryptPasswordHasher,
-            containerDI.services.jwtAuthService,
-            containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork,
-            containerDI.loggerMonitorInstance.pinoLogger
-        );
+        useCase = containerDI.modules.user.useCases.updateEmailUseCase
     });
 
     describe('Actor & Identity Validations', () => {
@@ -85,7 +86,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
             // Isolate concurrent execution variants using unique identification anchors
             const uniqueId = Math.random().toString(36).substring(2, 11);
             const emailTarget = `already-taken-${uniqueId}@synergy.com`;
-            
+
             await seedUserDefault(prisma, {
                 email: UserEmailVo.create(emailTarget)
             });

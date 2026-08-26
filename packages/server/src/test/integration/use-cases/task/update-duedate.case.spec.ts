@@ -6,12 +6,21 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('UpdateTaskDuedateCase - Integration Tests', () => {
     let useCase: UpdateTaskDuedateCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -20,12 +29,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateTaskDuedateCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.updateTaskDuedateUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -44,7 +48,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
         it('should throw taskNotFound if the taskId does not exist', async () => {
             // Seed a legitimate actor record to pass the initial identity guard layer safely
             const actor = await seedUserRandom(prisma);
-            
+
             // Dispatch an operation containing an unmapped task UUID to force an infrastructure lookup failure
             const execution = useCase.execute({
                 actorId: actor.toPrimitives().publicId,
@@ -87,7 +91,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             const project = await seedProjectRandom(prisma, owner.toPrimitives().id);
             const projectPrimitives = project.toPrimitives();
 
-      
+
             const creatorMember = await seedMemberRandom(prisma, projectPrimitives.id, owner.toPrimitives().id, {
                 role: MemberRoleVo.create('admin'),
                 status: MemberStatusVo.create('active')
@@ -95,7 +99,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             // Persist a task aggregate bound to the creator to evaluate external modification restrictions
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creatorMember.toPrimitives().id, null);
 
-         
+
             // Seed a separate admin teammate who, despite having elevated privileges, is not authorized to edit this specific task
             const spectatorUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('spectator'), email: UserEmailVo.create('spectator@email.com') });
             await seedMemberRandom(prisma, projectPrimitives.id, spectatorUser.toPrimitives().id, {
@@ -110,7 +114,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
                 dueDate: new Date(Date.now() + 172800000).toISOString()
             });
 
-         
+
             await expect(execution).rejects.toThrow(TaskErrorFactory.taskNotPermittedToEdit().message);
         });
     });
@@ -129,7 +133,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             });
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creatorMember.toPrimitives().id, null);
 
-            
+
             // Generate an invalid payload pointing to a past date relative to the current execution timeline
             const pastDate = new Date(Date.now() - 5 * 86400000);
 
@@ -140,7 +144,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
                 dueDate: pastDate.toISOString()
             });
 
-    
+
             await expect(execution).rejects.toThrow(TaskErrorFactory.taskDuedateInconsistency().message);
         });
     });
@@ -161,11 +165,11 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             const taskPrimitives = task.toPrimitives();
 
             // Establish a valid chronological destination satisfying domain temporal conditions
-            const futureDate = new Date(Date.now() + 5 * 86400000); 
+            const futureDate = new Date(Date.now() + 5 * 86400000);
 
             // Run the timeline adjustment under fully verified ownership and state alignment
             const result = await useCase.execute({
-                actorId: owner.toPrimitives().publicId, 
+                actorId: owner.toPrimitives().publicId,
                 taskId: taskPrimitives.publicId,
                 dueDate: futureDate.toISOString()
             });
@@ -173,7 +177,7 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             expect(result.id).toBe(taskPrimitives.publicId);
             expect(result.dueDate).toBe(futureDate.toISOString());
 
-            
+
             // Query infrastructure directly to confirm state mutations successfully bridged domain aggregates to the database tier
             const updatedDbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });
             expect(updatedDbTask?.due_date.toISOString()).toBe(futureDate.toISOString());
@@ -196,16 +200,16 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
                 role: MemberRoleVo.create('admin'),
                 status: MemberStatusVo.create('active')
             });
-            
+
             const task = await seedTaskRandom(prisma, projectPrimitives.id, adminMember.toPrimitives().id, null);
             const taskPrimitives = task.toPrimitives();
 
             // Establish a valid chronological destination satisfying domain temporal conditions
-            const futureDate = new Date(Date.now() + 10 * 86400000); 
+            const futureDate = new Date(Date.now() + 10 * 86400000);
 
             // Run command targeting the project owner's root authority to verify domain bypass privileges override creator constraints
             const result = await useCase.execute({
-                actorId: owner.toPrimitives().publicId, 
+                actorId: owner.toPrimitives().publicId,
                 taskId: taskPrimitives.publicId,
                 dueDate: futureDate.toISOString()
             });
@@ -217,5 +221,5 @@ describe('UpdateTaskDuedateCase - Integration Tests', () => {
             expect(updatedDbTask?.due_date.toISOString()).toBe(futureDate.toISOString());
         });
     });
-    
+
 });

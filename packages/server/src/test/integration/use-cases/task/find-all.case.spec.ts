@@ -6,12 +6,21 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskObjectiveVo } from 'core/value-objects/task/task-objective.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('FindAllTasksCase - Integration Tests', () => {
     let useCase: FindAllTasksCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -20,12 +29,7 @@ describe('FindAllTasksCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new FindAllTasksCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.findAllTasksUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -80,7 +84,7 @@ describe('FindAllTasksCase - Integration Tests', () => {
 
             // Seed a team user whose membership reference status is explicitly set to suspended/inactive
             const suspendedUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('banned'), email: UserEmailVo.create('banned@email.com') });
-            
+
             await seedMemberRandom(prisma, projectPrimitives.id, suspendedUser.toPrimitives().id, {
                 role: MemberRoleVo.create('contributor'),
                 status: MemberStatusVo.create('inactive')
@@ -151,7 +155,7 @@ describe('FindAllTasksCase - Integration Tests', () => {
             });
 
             expect(result.tasks.length).toBe(2);
-            
+
             const taskOne = result.tasks.find(t => t.objective === 'Task One');
             expect(taskOne).toBeTruthy();
             expect(taskOne?.projectId).toBe(projectPrimitives.publicId);

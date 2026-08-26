@@ -1,8 +1,20 @@
 import { UserDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('UserStatusVo creation, validation and prop testing', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     it('must create an UserStatusVo if all requirements, allowed status and validations are correct in status input', () => {
 

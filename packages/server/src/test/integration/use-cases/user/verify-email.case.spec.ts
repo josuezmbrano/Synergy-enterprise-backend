@@ -3,12 +3,21 @@ import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js'
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedTokenDefault, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('VerifyEmailCase - Integration Tests with Unit of Work', () => {
     let useCase: VerifyEmailCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -18,11 +27,7 @@ describe('VerifyEmailCase - Integration Tests with Unit of Work', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new VerifyEmailCase(
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.repositories.userRepository,
-            containerDI.transactionalCoordinator.unitOfWork
-        );
+        useCase = containerDI.modules.auth.useCases.verifyEmailUseCase
     });
 
     describe('Token & User Validations', () => {

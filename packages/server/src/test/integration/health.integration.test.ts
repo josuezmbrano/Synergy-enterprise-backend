@@ -1,16 +1,25 @@
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { createContainer } from 'infrastructure/container/di.config.js';
+import { DatabasePinger } from 'infrastructure/lib/database-pinger.js';
 import request from 'supertest'
-import { app } from 'infrastructure/http/app.js'
-import { containerDI } from 'infrastructure/container/di.config.js'
+import { Express } from 'express';
+import { createApp } from 'infrastructure/http/app.js';
 
 
 describe('Health Checks Integration Tests', () => {
 
-    beforeEach(() => {
-        vi.restoreAllMocks();
+    let databasePinger: DatabasePinger
+    let app: Express
+
+    beforeAll(() => {
+        const env = getEnv()
+        const container = createContainer(env);
+        app = createApp(container)
+        databasePinger = container.healthMonitorResource.databasePinger
     });
 
     afterEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('GET /health/liveness', () => {
@@ -62,7 +71,7 @@ describe('Health Checks Integration Tests', () => {
 
         it('should return 503 Service Unavailable when database connection fails', async () => {
             // intercepted the pinger call resolved by the DI container
-            vi.spyOn(containerDI.healthMonitorResource.databasePinger, 'ping')
+            vi.spyOn(databasePinger, 'ping')
                 .mockRejectedValueOnce(new Error('PostgreSQL connection dropped'));
 
             const response = await request(app).get('/health/readiness');
@@ -86,7 +95,7 @@ describe('Health Checks Integration Tests', () => {
 
         it('should return 503 Service Unavailable when database query exceeds the 2000ms timeout', async () => {
             // Simulated database freezes after responding for 3000ms
-            vi.spyOn(containerDI.healthMonitorResource.databasePinger, 'ping')
+            vi.spyOn(databasePinger, 'ping')
                 .mockImplementationOnce(
                     () => new Promise((resolve) => setTimeout(resolve, 3000))
                 );
@@ -106,5 +115,5 @@ describe('Health Checks Integration Tests', () => {
             });
         });
     });
-    
+
 });

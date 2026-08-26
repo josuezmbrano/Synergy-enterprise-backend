@@ -1,9 +1,21 @@
 import { MemberDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
 import { MemberMother } from 'test/builders/member.mother.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('MemberEntityClass creation, methods testing and core logic.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     describe('Creation, reconstitution, and basic calculation testing.', () => {
 
@@ -175,7 +187,7 @@ describe('MemberEntityClass creation, methods testing and core logic.', () => {
 
             it('should correctly update member status to active, and mark updatedAt timestamp field', () => {
 
-                const memberEntity = MemberMother.createDefault({status: MemberStatusVo.create('inactive')})
+                const memberEntity = MemberMother.createDefault({ status: MemberStatusVo.create('inactive') })
                 const previousUpdatedAt = memberEntity.updatedAtDate.value.getTime()
 
                 vi.advanceTimersByTime(10000)

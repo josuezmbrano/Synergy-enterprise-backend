@@ -1,8 +1,20 @@
 import { MemberDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('MemberStatusVo creation, validation and prop testing.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     it('must create a MemberStatusVo if all requirements and validations are correct.', () => {
 

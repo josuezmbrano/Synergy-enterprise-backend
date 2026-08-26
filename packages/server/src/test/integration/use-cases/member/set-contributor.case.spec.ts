@@ -6,13 +6,22 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('SetContributorRoleCase - Integration Tests', () => {
     let useCase: SetContributorRoleCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -22,11 +31,7 @@ describe('SetContributorRoleCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetContributorRoleCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository
-        );
+        useCase = containerDI.modules.member.useCases.setContributorRoleUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -71,7 +76,7 @@ describe('SetContributorRoleCase - Integration Tests', () => {
             const projectA = await seedProjectRandom(prisma, ownerPrimitives.id);
             const projectAPrimitives = projectA.toPrimitives();
 
-            
+
             await seedMemberRandom(prisma, projectAPrimitives.id, ownerPrimitives.id, {
                 role: MemberRoleVo.create('admin'),
                 status: MemberStatusVo.create('active')
@@ -80,7 +85,7 @@ describe('SetContributorRoleCase - Integration Tests', () => {
             // Isolate a foreign account entity and a separate Project B workspace container boundary
             const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@email.com') });
             const projectB = await seedProjectRandom(prisma, stranger.toPrimitives().id);
-            
+
             // Setup the candidate target profile strictly assigned to the foreign project context space
             const targetMemberB = await seedMemberRandom(prisma, projectB.toPrimitives().id, stranger.toPrimitives().id, {
                 role: MemberRoleVo.create('admin'),
@@ -216,7 +221,7 @@ describe('SetContributorRoleCase - Integration Tests', () => {
             // Persist a targeted teammate record who already possesses the target privilege level
             const contributorUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('pedro'), email: UserEmailVo.create('pedro@email.com') });
             const contributorMember = await seedMemberRandom(prisma, projectPrimitives.id, contributorUser.toPrimitives().id, {
-                role: MemberRoleVo.create('contributor'), 
+                role: MemberRoleVo.create('contributor'),
                 status: MemberStatusVo.create('active')
             });
             const contributorMemberPrimitives = contributorMember.toPrimitives();
@@ -236,5 +241,5 @@ describe('SetContributorRoleCase - Integration Tests', () => {
         });
 
     });
-    
+
 });

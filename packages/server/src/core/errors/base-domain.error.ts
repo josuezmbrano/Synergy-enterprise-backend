@@ -1,4 +1,3 @@
-import { env } from 'infrastructure/config/env.config.js'
 import { DomainNames } from 'infrastructure/mapper.error.js'
 
 interface ErrorMetadata {
@@ -40,7 +39,7 @@ export abstract class BaseDomainError extends Error {
             code: this.code,
             ...(this.metadata && { metadata: this.metadata }),
             isOperational: this.isOperational,
-            ...(env.NODE_ENV === 'development' && { stack: this.stack })
+            ...(process.env.NODE_ENV === 'development' && { stack: this.stack })
         }
     }
 

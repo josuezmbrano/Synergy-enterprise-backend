@@ -7,13 +7,22 @@ import { ProjectStatusVo } from 'core/value-objects/project/project-status.vo.js
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('CompleteProjectCase - Integration Tests', () => {
     let useCase: CompleteProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -23,12 +32,7 @@ describe('CompleteProjectCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new CompleteProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.project.useCases.completeProjectUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -50,7 +54,7 @@ describe('CompleteProjectCase - Integration Tests', () => {
 
             const execution = useCase.execute({
                 actorId: actorPrimitives.publicId,
-                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1' 
+                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1'
             });
 
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
@@ -138,7 +142,7 @@ describe('CompleteProjectCase - Integration Tests', () => {
                 projectId: projectPrimitives.publicId
             });
 
-            
+
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectCompletionPendingTasks().message);
         });
 
@@ -159,7 +163,7 @@ describe('CompleteProjectCase - Integration Tests', () => {
 
             // Pre-populate the persistence layer with an active 'doing' task aggregate to block project closure
             await seedTaskRandom(prisma, projectPrimitives.id, memberPrimitives.id, null, {
-                status: TaskStatusVo.create('doing') 
+                status: TaskStatusVo.create('doing')
             });
 
             const execution = useCase.execute({
@@ -219,7 +223,7 @@ describe('CompleteProjectCase - Integration Tests', () => {
             });
 
             expect(postFetchDb?.status).toBe('COMPLETED');
-            expect(postFetchDb?.completed_at).not.toBeNull(); 
+            expect(postFetchDb?.completed_at).not.toBeNull();
             expect(postFetchDb?.updated_at).toBeDefined();
         });
     });

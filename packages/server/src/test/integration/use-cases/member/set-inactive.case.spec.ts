@@ -7,28 +7,32 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('SetInactiveStatusCase - Integration Tests', () => {
     let useCase: SetInactiveStatusCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
-  
+
         await prisma.verificationToken.deleteMany({});
         await prisma.task.deleteMany({});
         await prisma.member.deleteMany({});
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetInactiveStatusCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.taskRepository
-        );
+        useCase = containerDI.modules.member.useCases.setInactiveStatusUseCase
     });
 
     describe('Guards & Resource Alignment', () => {
@@ -59,7 +63,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             // Dispatch an operation containing an unmapped project UUID to force an infrastructure lookup failure
             const execution = useCase.execute({
                 actorId: actorPrimitives.publicId,
-                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1', 
+                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1',
                 targetMemberId: targetMember.toPrimitives().publicId
             });
 
@@ -70,7 +74,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             // Seed the operational project manager and Project A workspace scope
             const owner = await seedUserRandom(prisma);
             const ownerPrimitives = owner.toPrimitives();
-            
+
 
             const projectA = await seedProjectRandom(prisma, ownerPrimitives.id);
             const projectAPrimitives = projectA.toPrimitives();
@@ -82,7 +86,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             const strangerPrimitives = stranger.toPrimitives();
             const projectB = await seedProjectRandom(prisma, strangerPrimitives.id);
             const projectBPrimitives = projectB.toPrimitives();
-            
+
             // Setup the candidate target profile strictly assigned to the foreign project context space
             const targetMemberB = await seedMemberRandom(prisma, projectBPrimitives.id, strangerPrimitives.id);
             const targetMemberBPrimitives = targetMemberB.toPrimitives();
@@ -212,7 +216,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             // Setup a fully active team user profile whose member reference status is currently set to active
             const targetUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('maria'), email: UserEmailVo.create('maria@email.com') });
             const targetUserPrimitives = targetUser.toPrimitives();
-            
+
             const targetMember = await seedMemberRandom(prisma, projectPrimitives.id, targetUserPrimitives.id, {
                 role: MemberRoleVo.create('contributor'),
                 status: MemberStatusVo.create('active')
@@ -246,7 +250,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             const project = await seedProjectRandom(prisma, owner.toPrimitives().id);
             const projectPrimitives = project.toPrimitives();
 
-            
+
             // Persist a secondary administrator profile who has no active operational dependencies inside the project
             const adminUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('secondary-admin'), email: UserEmailVo.create('admin2@email.com') });
             const adminPrimitives = adminUser.toPrimitives();
@@ -257,7 +261,7 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
             });
             const adminMemberPrimitives = adminMember.toPrimitives();
 
-            
+
             // Execute the routine with matching actor and target IDs to validate the self-deactivation capability path
             const result = await useCase.execute({
                 actorId: adminPrimitives.publicId,
@@ -273,5 +277,5 @@ describe('SetInactiveStatusCase - Integration Tests', () => {
         });
 
     });
-    
+
 });

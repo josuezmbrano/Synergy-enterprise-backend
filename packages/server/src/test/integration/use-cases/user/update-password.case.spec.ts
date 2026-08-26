@@ -2,12 +2,22 @@ import { UpdatePasswordCase } from 'application/use-cases/user/update-password.u
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('UpdatePasswordCase - Integration Tests', () => {
     let useCase: UpdatePasswordCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         vi.useRealTimers();
@@ -18,10 +28,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdatePasswordCase(
-            containerDI.repositories.userRepository,
-            containerDI.services.bcryptPasswordHasher
-        );
+        useCase = containerDI.modules.user.useCases.updatePasswordUseCase
     });
 
     describe('Identity & Actor Validations', () => {
@@ -42,7 +49,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
         it('should throw an invalid credentials error if oldPassword does not match the stored user password', async () => {
             const correctOldPassword = 'CorrectOldPassword123!';
             const incorrectOldPassword = 'WrongOldPassword123!';
-            
+
             // Seed a legitimate user account with a specifically hashed password profile
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(correctOldPassword);
             const userEntity = await seedUserDefault(prisma, {
@@ -72,7 +79,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
         it('should throw a password reuse error if the new password is raw text identical to the old password', async () => {
             const currentPasswordPlane = 'SamePassword123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(currentPasswordPlane);
-            
+
             // Seed a user profile whose active credential record matches the incoming mutation criteria
             const userEntity = await seedUserDefault(prisma, {
                 password: UserPasswordVo.fromHash(hashedPassword)
@@ -94,7 +101,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
         it('should propagate database errors and leave stored credentials unchanged if repository save fails', async () => {
             const oldPasswordPlane = 'OldPassword123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(oldPasswordPlane);
-            
+
             // Seed a valid starting user record inside the clean isolated database schema
             const userEntity = await seedUserDefault(prisma, {
                 password: UserPasswordVo.fromHash(hashedPassword)
@@ -141,7 +148,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
             });
 
             const updatedUserInDb = await prisma.user.findUnique({ where: { id: primitives.id } });
-            
+
             expect(updatedUserInDb!.password).not.toBe(oldHashedPassword);
 
             const isMatchWithNewPassword = await containerDI.services.bcryptPasswordHasher.compare(
@@ -150,7 +157,7 @@ describe('UpdatePasswordCase - Integration Tests', () => {
             );
             expect(isMatchWithNewPassword).toBe(true);
         });
-        
+
     });
 
 });

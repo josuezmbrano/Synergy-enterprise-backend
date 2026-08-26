@@ -6,12 +6,22 @@ import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
 import { PrismaProjectRepository } from 'infrastructure/repositories/project.prisma.js';
 import { ProjectMother } from 'test/builders/project.mother.js';
 import { seedProjectDefault, seedProjectRandom, seedUserDefault, seedUserRandom } from 'test/utils/db-seeder.js';
-import prisma from 'infrastructure/lib/prisma.js';
 import { ProjectCategoryVo } from 'core/value-objects/project/project-category.vo.js';
 import { InfraDomainError } from 'core/errors/domain/domain-classes.error.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
 
 describe('PrismaProjectRepository - Integration Tests', () => {
     let projectRepository: PrismaProjectRepository;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.project.deleteMany({});

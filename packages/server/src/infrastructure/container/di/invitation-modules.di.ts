@@ -1,4 +1,4 @@
-import { containerDI } from '../di.config.js';
+import { ContainerBase } from '../di.base.js';
 
 // USE CASE IMPORTS
 import { AcceptInvitationCase } from 'application/use-cases/invitation/accept-invitation.case.js';
@@ -15,36 +15,41 @@ import { InviteToProjectController } from 'infrastructure/http/controllers/invit
 import { RejectInvitationController } from 'infrastructure/http/controllers/invitation/reject-invitation.controller.js';
 
 
-// USE CASES INSTANTIATION
-const acceptInvitationUseCase = new AcceptInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.memberRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository, containerDI.transactionalCoordinator.unitOfWork)
-const getAllInvitationsUseCase = new GetAllInvitationsCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository)
-const getInvitationUseCase = new GetInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository, containerDI.repositories.projectRepository)
-const inviteToProjectUseCase = new InviteToProjectCase(containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.invitationRepository)
-const rejectInvitationUseCase = new RejectInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository)
-
-// CONTROLLERS INSTANTIATION
-const acceptInvitationController = new AcceptInvitationController(acceptInvitationUseCase)
-const getAllInvitationsController = new GetAllInvitationsController(getAllInvitationsUseCase)
-const getInvitationController = new GetInvitationController(getInvitationUseCase)
-const inviteToProjectController = new InviteToProjectController(inviteToProjectUseCase)
-const rejectInvitationController = new RejectInvitationController(rejectInvitationUseCase)
 
 
+export const createInvitationModules = (containerDI: ContainerBase) => {
 
-export const invitationModulesContainer = {
-    useCases: {
-        acceptInvitationUseCase,
-        getAllInvitationsUseCase,
-        getInvitationUseCase,
-        inviteToProjectUseCase,
-        rejectInvitationUseCase
-    },
+    // USE CASES INSTANTIATION
+    const acceptInvitationUseCase = new AcceptInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.memberRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository, containerDI.transactionalCoordinator.unitOfWork)
+    const getAllInvitationsUseCase = new GetAllInvitationsCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository)
+    const getInvitationUseCase = new GetInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository, containerDI.repositories.projectRepository)
+    const inviteToProjectUseCase = new InviteToProjectCase(containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.invitationRepository)
+    const rejectInvitationUseCase = new RejectInvitationCase(containerDI.repositories.userRepository, containerDI.repositories.invitationRepository, containerDI.repositories.projectRepository)
 
-    controllers: {
-        acceptInvitationController,
-        getAllInvitationsController,
-        getInvitationController,
-        inviteToProjectController,
-        rejectInvitationController
-    }
-} as const
+    // CONTROLLERS INSTANTIATION
+    const acceptInvitationController = new AcceptInvitationController(acceptInvitationUseCase)
+    const getAllInvitationsController = new GetAllInvitationsController(getAllInvitationsUseCase)
+    const getInvitationController = new GetInvitationController(getInvitationUseCase)
+    const inviteToProjectController = new InviteToProjectController(inviteToProjectUseCase)
+    const rejectInvitationController = new RejectInvitationController(rejectInvitationUseCase)
+
+    return {
+        useCases: {
+            acceptInvitationUseCase,
+            getAllInvitationsUseCase,
+            getInvitationUseCase,
+            inviteToProjectUseCase,
+            rejectInvitationUseCase
+        },
+
+        controllers: {
+            acceptInvitationController,
+            getAllInvitationsController,
+            getInvitationController,
+            inviteToProjectController,
+            rejectInvitationController
+        }
+    } as const
+}
+
+export type InvitationModules = ReturnType<typeof createInvitationModules>

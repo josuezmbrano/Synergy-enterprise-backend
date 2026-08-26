@@ -7,12 +7,21 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('UpdateAssigneeCase - Integration Tests', () => {
     let useCase: UpdateAssigneeCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -21,12 +30,7 @@ describe('UpdateAssigneeCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateAssigneeCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.updateAssigneeUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -45,7 +49,7 @@ describe('UpdateAssigneeCase - Integration Tests', () => {
         it('should throw taskNotFound if the taskId does not exist', async () => {
             // Seed a legitimate actor record to pass the initial identity guard layer safely
             const actor = await seedUserRandom(prisma);
-            
+
             // Dispatch an operation containing an unmapped task UUID to force an infrastructure lookup failure
             const execution = useCase.execute({
                 actorId: actor.toPrimitives().publicId,
@@ -154,7 +158,7 @@ describe('UpdateAssigneeCase - Integration Tests', () => {
                 role: MemberRoleVo.create('admin'),
                 status: MemberStatusVo.create('active')
             });
-            
+
             // Persist the targeted task aggregate instance explicitly configured with an unassigned status (null)
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creator.toPrimitives().id, null);
             const taskPrimitives = task.toPrimitives();
@@ -176,7 +180,7 @@ describe('UpdateAssigneeCase - Integration Tests', () => {
 
             expect(result.assignedTo).toBe(developerPrimitives.publicId);
 
-   
+
             // Query infrastructure directly to confirm state mutations successfully bridged domain aggregates to the database tier
             const dbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });
             expect(dbTask?.assigned_to).toBe(developerPrimitives.id);

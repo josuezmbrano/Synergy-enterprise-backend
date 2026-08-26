@@ -5,13 +5,22 @@ import { ProjectDescriptionVo } from 'core/value-objects/project/project-descrip
 import { ProjectTitleVo } from 'core/value-objects/project/project-title.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('UpdateProjectInfoCase - Integration Tests', () => {
     let useCase: UpdateProjectInfoCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -21,11 +30,7 @@ describe('UpdateProjectInfoCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateProjectInfoCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.project.useCases.updateProjectInfoUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -54,10 +59,10 @@ describe('UpdateProjectInfoCase - Integration Tests', () => {
         it('should throw projectNotFound (obfuscated) if the project exists but the actor is NOT a member', async () => {
             // Seed the operational actor profile who is unauthorized to view or alter external resources
             const actor = await seedUserRandom(prisma);
-            
+
             // Seed a distinct separate user account to act as the true owner of the isolated target project
             const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('pepito'), email: UserEmailVo.create('pepito@email.com') });
-            
+
             // Persist a valid project entry completely isolated from the main operational actor scope
             const foreignProject = await seedProjectRandom(prisma, stranger.id.value);
             await seedMemberRandom(prisma, foreignProject.id.value, stranger.id.value);
@@ -69,7 +74,7 @@ describe('UpdateProjectInfoCase - Integration Tests', () => {
             });
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
         });
-        
+
     });
 
     describe('Business Rules & Constraints', () => {
@@ -119,7 +124,7 @@ describe('UpdateProjectInfoCase - Integration Tests', () => {
             const execution = useCase.execute({
                 actorId: ownerPrimitives.publicId,
                 projectId: primitivesB.publicId,
-                title: 'proyecto alpha' 
+                title: 'proyecto alpha'
             });
 
             await expect(execution).rejects.toThrow(
@@ -189,5 +194,5 @@ describe('UpdateProjectInfoCase - Integration Tests', () => {
             expect(fetchDb?.updated_at).toBeDefined();
         });
     });
-    
+
 });

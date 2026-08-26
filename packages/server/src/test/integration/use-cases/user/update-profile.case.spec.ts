@@ -3,12 +3,21 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserNameVo } from 'core/value-objects/user/user-name.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('UpdateProfileCase - Integration Tests', () => {
     let useCase: UpdateProfileCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -17,7 +26,7 @@ describe('UpdateProfileCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new UpdateProfileCase(containerDI.repositories.userRepository);
+        useCase = containerDI.modules.user.useCases.updateProfileUseCase
     });
 
     describe('Permissions & Guard Clauses', () => {
@@ -112,7 +121,7 @@ describe('UpdateProfileCase - Integration Tests', () => {
             const result = await useCase.execute({
                 actorId: primitives.publicId,
                 name: 'Nuevo Nombre',
-                username: 'YoShi' 
+                username: 'YoShi'
             });
 
             expect(result.fullname).toContain('Nuevo Nombre');
@@ -120,7 +129,7 @@ describe('UpdateProfileCase - Integration Tests', () => {
 
             const dbUser = await prisma.user.findUnique({ where: { public_id: primitives.publicId } });
             expect(dbUser?.name).toBe('Nuevo Nombre');
-            expect(dbUser?.username).toBe('YoShi'); 
+            expect(dbUser?.username).toBe('YoShi');
         });
 
         it('should allow updating the username if the user is only changing the casing style of their own username', async () => {

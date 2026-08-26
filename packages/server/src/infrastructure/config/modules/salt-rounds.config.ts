@@ -1,7 +1,10 @@
-import { env } from "infrastructure/config/env.config.js"
+import { Env } from "../env.schema.js"
 
-export const saltRounds: number = {
-    production: 12,
-    development: 10,
-    test: 2
-}[env.NODE_ENV]
+export const getSaltRounds = (env: Env): number => {
+
+    return {
+        production: 12,
+        development: 10,
+        test: 2
+    }[env.NODE_ENV]
+}

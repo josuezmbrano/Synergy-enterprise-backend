@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { Router as RouterType } from "express-serve-static-core";
-import { healthModulesContainer } from "infrastructure/container/di/health-modules.di.js";
+import { HealthModules } from "infrastructure/container/di/health-modules.di.js";
 
-export const healthRoutes: RouterType = Router()
+export const createHealthRouter = (modules: HealthModules): Router => {
+    const healthRouter = Router()
+    const { controllers } = modules
 
+    healthRouter.get('/liveness', controllers.getLivenessController.execute)
+    healthRouter.get('/readiness', controllers.getReadinessController.execute)
 
-// Destructured controllers from the DI auth module container
-const { getLivenessController, getReadinessController } = healthModulesContainer.controllers
-
-healthRoutes.get('/liveness', getLivenessController.execute)
-healthRoutes.get('/readiness', getReadinessController.execute)
+    return healthRouter
+}

@@ -1,8 +1,20 @@
 import { UserDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('UserEmailVo creation, validation and prop testing', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     it('must create an email value object if validations, format and requirements for an email address are correct.', () => {
 
@@ -26,7 +38,7 @@ describe('UserEmailVo creation, validation and prop testing', () => {
     })
 
     it('must throw a REQUIRED reason value on field email in UserDomainError if email input is an empty string', () => {
-   
+
         expectDomainError(UserDomainError, () => UserEmailVo.create(''), 4, undefined, 'REQUIRED', 'email')
     })
 

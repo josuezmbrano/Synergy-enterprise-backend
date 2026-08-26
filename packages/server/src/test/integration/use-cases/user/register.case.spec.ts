@@ -1,13 +1,22 @@
 import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { UserMother } from 'test/builders/user.mother.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('RegisterUserCase - Integration Tests', () => {
     let useCase: RegisterUserCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -16,15 +25,7 @@ describe('RegisterUserCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new RegisterUserCase(
-            containerDI.repositories.userRepository,
-            containerDI.services.bcryptPasswordHasher,
-            containerDI.services.jwtAuthService,
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork,
-            containerDI.loggerMonitorInstance.pinoLogger
-        );
+        useCase = containerDI.modules.auth.useCases.registerUserUseCase
     });
 
     describe('Uniqueness Invariant Validations', () => {
@@ -129,7 +130,7 @@ describe('RegisterUserCase - Integration Tests', () => {
 
             // Fetch the global Mailpit state container slice to verify outbound workflow delivery concurrently
             const mailpitResponse = await mailpit.listMessages();
-            
+
             // Isolate and extract exclusively the message context targeted to this current test's unique payload
             const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === input.email);
             expect(testEmails.length).toBe(1);

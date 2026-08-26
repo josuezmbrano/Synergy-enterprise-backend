@@ -1,4 +1,4 @@
-import { containerDI } from '../di.config.js';
+import { ContainerBase } from '../di.base.js';
 
 // USE CASE IMPORTS
 import { CreateTaskCase } from 'application/use-cases/task/create-task.usecase.js';
@@ -33,73 +33,80 @@ import { UpdateTaskInfoController } from 'infrastructure/http/controllers/task/u
 import { SetReviewTaskStatusController } from 'infrastructure/http/controllers/task/set-review-status.controller.js';
 
 
-// USE CASES INSTANTIATION
-const createTaskUseCase = new CreateTaskCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const findAllTasksUseCase = new FindAllTasksCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const findTaskUseCase = new FindTaskCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const updateTaskDuedateUseCase = new UpdateTaskDuedateCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const updateTaskInfoUseCase = new UpdateTaskInfoCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const setDoingStatusUseCase = new SetDoingStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const setCompletedStatusUseCase = new SetCompletedStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const setReviewStatusUseCase = new SetReviewStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const setLowPriorityUseCase = new SetLowPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const setMediumPriorityUseCase = new SetMediumPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const setHighPriorityUseCase = new SetHighPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const setCriticalPriorityUseCase = new SetCriticalPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const removeAssigneeUseCase = new RemoveAssigneeCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
-const updateAssigneeUseCase = new UpdateAssigneeCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-
-// CONTROLLERS INSTANTIATION
-const createTaskController = new CreateTaskController(createTaskUseCase)
-const findAllTasksController = new FindAllTasksController(findAllTasksUseCase)
-const findTaskController = new FindTaskController(findTaskUseCase)
-const updateTaskDuedateController = new UpdateTaskDuedateController(updateTaskDuedateUseCase)
-const updateTaskInfoController = new UpdateTaskInfoController(updateTaskInfoUseCase)
-const setDoingTaskStatusController = new SetDoingTaskStatusController(setDoingStatusUseCase)
-const setCompletedTaskStatusController = new SetCompletedTaskStatusController(setCompletedStatusUseCase)
-const setReviewTaskStatusController = new SetReviewTaskStatusController(setReviewStatusUseCase)
-const setLowPriorityController = new SetLowPriorityController(setLowPriorityUseCase)
-const setMediumPriorityController = new SetMediumPriorityController(setMediumPriorityUseCase)
-const setHighPriorityController = new SetHighPriorityController(setHighPriorityUseCase)
-const setCriticalPriorityController = new SetCriticalPriorityController(setCriticalPriorityUseCase)
-const removeAssigneeController = new RemoveAssigneeController(removeAssigneeUseCase)
-const updateAssigneeController = new UpdateAssigneeController(updateAssigneeUseCase)
 
 
 
 
-export const taskModulesContainer = {
-    useCases: {
-        createTaskUseCase,
-        findAllTasksUseCase,
-        findTaskUseCase,
-        updateTaskDuedateUseCase,
-        updateTaskInfoUseCase,
-        setDoingStatusUseCase,
-        setCompletedStatusUseCase,
-        setReviewStatusUseCase,
-        setLowPriorityUseCase,
-        setMediumPriorityUseCase,
-        setHighPriorityUseCase,
-        setCriticalPriorityUseCase,
-        removeAssigneeUseCase,
-        updateAssigneeUseCase
-    },
+export const createTaskModules = (containerDI: ContainerBase) => {
 
-    controllers: {
-        createTaskController,
-        findAllTasksController,
-        findTaskController,
-        updateTaskDuedateController,
-        updateTaskInfoController,
-        setDoingTaskStatusController,
-        setCompletedTaskStatusController,
-        setReviewTaskStatusController,
-        setLowPriorityController,
-        setMediumPriorityController,
-        setHighPriorityController,
-        setCriticalPriorityController,
-        removeAssigneeController,
-        updateAssigneeController
-    }
-} as const
+    // USE CASES INSTANTIATION
+    const createTaskUseCase = new CreateTaskCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const findAllTasksUseCase = new FindAllTasksCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const findTaskUseCase = new FindTaskCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const updateTaskDuedateUseCase = new UpdateTaskDuedateCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const updateTaskInfoUseCase = new UpdateTaskInfoCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const setDoingStatusUseCase = new SetDoingStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const setCompletedStatusUseCase = new SetCompletedStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const setReviewStatusUseCase = new SetReviewStatusCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const setLowPriorityUseCase = new SetLowPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const setMediumPriorityUseCase = new SetMediumPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const setHighPriorityUseCase = new SetHighPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const setCriticalPriorityUseCase = new SetCriticalPriorityCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const removeAssigneeUseCase = new RemoveAssigneeCase(containerDI.repositories.taskRepository, containerDI.repositories.userRepository, containerDI.repositories.projectRepository, containerDI.repositories.memberRepository)
+    const updateAssigneeUseCase = new UpdateAssigneeCase(containerDI.repositories.taskRepository, containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+
+    // CONTROLLERS INSTANTIATION
+    const createTaskController = new CreateTaskController(createTaskUseCase)
+    const findAllTasksController = new FindAllTasksController(findAllTasksUseCase)
+    const findTaskController = new FindTaskController(findTaskUseCase)
+    const updateTaskDuedateController = new UpdateTaskDuedateController(updateTaskDuedateUseCase)
+    const updateTaskInfoController = new UpdateTaskInfoController(updateTaskInfoUseCase)
+    const setDoingTaskStatusController = new SetDoingTaskStatusController(setDoingStatusUseCase)
+    const setCompletedTaskStatusController = new SetCompletedTaskStatusController(setCompletedStatusUseCase)
+    const setReviewTaskStatusController = new SetReviewTaskStatusController(setReviewStatusUseCase)
+    const setLowPriorityController = new SetLowPriorityController(setLowPriorityUseCase)
+    const setMediumPriorityController = new SetMediumPriorityController(setMediumPriorityUseCase)
+    const setHighPriorityController = new SetHighPriorityController(setHighPriorityUseCase)
+    const setCriticalPriorityController = new SetCriticalPriorityController(setCriticalPriorityUseCase)
+    const removeAssigneeController = new RemoveAssigneeController(removeAssigneeUseCase)
+    const updateAssigneeController = new UpdateAssigneeController(updateAssigneeUseCase)
+
+    
+    return {
+        useCases: {
+            createTaskUseCase,
+            findAllTasksUseCase,
+            findTaskUseCase,
+            updateTaskDuedateUseCase,
+            updateTaskInfoUseCase,
+            setDoingStatusUseCase,
+            setCompletedStatusUseCase,
+            setReviewStatusUseCase,
+            setLowPriorityUseCase,
+            setMediumPriorityUseCase,
+            setHighPriorityUseCase,
+            setCriticalPriorityUseCase,
+            removeAssigneeUseCase,
+            updateAssigneeUseCase
+        },
+
+        controllers: {
+            createTaskController,
+            findAllTasksController,
+            findTaskController,
+            updateTaskDuedateController,
+            updateTaskInfoController,
+            setDoingTaskStatusController,
+            setCompletedTaskStatusController,
+            setReviewTaskStatusController,
+            setLowPriorityController,
+            setMediumPriorityController,
+            setHighPriorityController,
+            setCriticalPriorityController,
+            removeAssigneeController,
+            updateAssigneeController
+        }
+    } as const
+}
+
+export type TaskModules = ReturnType<typeof createTaskModules>

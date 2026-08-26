@@ -1,6 +1,8 @@
 import { CommonDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { UniqueIdentifier } from 'core/value-objects/unique.identifier.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { createContainer } from 'infrastructure/container/di.config.js';
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 
 class DummyIdentifierVo extends UniqueIdentifier<'DummyIdentifierVo'> {
@@ -17,6 +19,16 @@ class DummyIdentifierVo extends UniqueIdentifier<'DummyIdentifierVo'> {
 }
 
 describe('UniqueIdentifierVo creation, validation and prop testing.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     it('must create a valid UUID unique identifier vo', () => {
 
