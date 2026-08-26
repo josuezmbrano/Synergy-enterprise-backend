@@ -2,14 +2,20 @@ import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PoolConfig, neonConfig } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import WebSocket from 'ws';
-import { env } from 'infrastructure/config/env.config.js';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Env } from 'infrastructure/config/env.schema.js';
 
 neonConfig.webSocketConstructor = WebSocket
 
 
-const prismaClientSingleton = () => {
+const globalForPrisma = globalThis as unknown as {
+    prisma: PrismaClient | undefined
+}
 
+export const createPrismaClient = (env: Env): PrismaClient => {
+
+    // AVOID HOT RELOADING ON DEVELOPMENT
+    if (env.NODE_ENV === 'development' && globalForPrisma.prisma) return globalForPrisma.prisma
 
     // NATIVE TCP FOR TESTCONTAINERS LOCAL CONNECTION
     if (env.NODE_ENV === 'test') {
@@ -33,9 +39,7 @@ const prismaClientSingleton = () => {
         })
     }
 
-
     // PRODUCTION / DEVELOPMENT NEON SERVERLESS CONNECTION
-    neonConfig.webSocketConstructor = WebSocket;
     const connectionStringUrl = env.DATABASE_URL;
 
     const config: PoolConfig = {
@@ -47,16 +51,5 @@ const prismaClientSingleton = () => {
     return new PrismaClient({
         adapter: adapter
     })
+
 }
-
-
-const globalForPrisma = globalThis as unknown as {
-    prisma: ReturnType<typeof prismaClientSingleton> | undefined
-}
-
-
-const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
-
-if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-export default prisma

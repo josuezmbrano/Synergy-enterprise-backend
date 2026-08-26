@@ -6,26 +6,31 @@ import { MemberRoleVo } from 'core/value-objects/member/member-role.vo.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('FindMemberCase - Integration Tests', () => {
     let useCase: FindMemberCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
-        
+
         await prisma.verificationToken.deleteMany({});
         await prisma.task.deleteMany({});
         await prisma.member.deleteMany({});
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new FindMemberCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository
-        );
+        useCase = containerDI.modules.member.useCases.findMemberUseCase
     });
 
     describe('Guards & Global Constraints', () => {
@@ -90,13 +95,13 @@ describe('FindMemberCase - Integration Tests', () => {
             const project = await seedProjectRandom(prisma, ownerPrimitives.id);
             const projectPrimitives = project.toPrimitives();
 
-            await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id, {status: MemberStatusVo.create('active')});
+            await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id, { status: MemberStatusVo.create('active') });
 
             // Dispatch a search using an unmapped random UUID for the member target to trigger standard aggregate absence logic
             const execution = useCase.execute({
                 actorId: ownerPrimitives.publicId,
                 projectId: projectPrimitives.publicId,
-                memberId: 'db710260-e4b5-4b07-9b24-5d51dfbfbc8d' 
+                memberId: 'db710260-e4b5-4b07-9b24-5d51dfbfbc8d'
             });
 
             await expect(execution).rejects.toThrow(MemberErrorFactory.memberNotFound().message);
@@ -110,7 +115,7 @@ describe('FindMemberCase - Integration Tests', () => {
             const projectAPrimitives = projectA.toPrimitives();
 
 
-            await seedMemberRandom(prisma, projectAPrimitives.id, ownerPrimitives.id, {status: MemberStatusVo.create('active')});
+            await seedMemberRandom(prisma, projectAPrimitives.id, ownerPrimitives.id, { status: MemberStatusVo.create('active') });
 
 
             // Seed an entirely separate context line to isolate cross-project aggregate references
@@ -118,7 +123,7 @@ describe('FindMemberCase - Integration Tests', () => {
             const strangerPrimitives = stranger.toPrimitives();
             const projectB = await seedProjectRandom(prisma, strangerPrimitives.id);
             const projectBPrimitives = projectB.toPrimitives();
-            
+
             const targetMemberB = await seedMemberRandom(prisma, projectBPrimitives.id, strangerPrimitives.id);
             const targetMemberBPrimitives = targetMemberB.toPrimitives();
 
@@ -126,7 +131,7 @@ describe('FindMemberCase - Integration Tests', () => {
             // Attempt to query the separate project B member through the operational scope boundary of project A
             const execution = useCase.execute({
                 actorId: ownerPrimitives.publicId,
-                projectId: projectAPrimitives.publicId, 
+                projectId: projectAPrimitives.publicId,
                 memberId: targetMemberBPrimitives.publicId
             });
 
@@ -184,7 +189,7 @@ describe('FindMemberCase - Integration Tests', () => {
             const project = await seedProjectRandom(prisma, owner.id.value);
             const projectPrimitives = project.toPrimitives();
 
-        
+
             // Seed a valid contributor actor profile tracking query clearances inside the shared cluster
             const contributorActor = await seedUserRandom(prisma, { username: UserUsernameVo.create('actor'), email: UserEmailVo.create('actor@email.com') });
             const contributorActorPrimitives = contributorActor.toPrimitives();
@@ -193,24 +198,24 @@ describe('FindMemberCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-            
+
             // Seed a completely separate active teammate profile who can be visibility mapped by peers
             const targetUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('target'), email: UserEmailVo.create('target@email.com') });
             const targetUserPrimitives = targetUser.toPrimitives();
             const targetMember = await seedMemberRandom(prisma, projectPrimitives.id, targetUserPrimitives.id, {
                 role: MemberRoleVo.create('contributor'),
-                status: MemberStatusVo.create('active') 
+                status: MemberStatusVo.create('active')
             });
             const targetMemberPrimitives = targetMember.toPrimitives();
 
-         
+
             const result = await useCase.execute({
                 actorId: contributorActorPrimitives.publicId,
                 projectId: projectPrimitives.publicId,
                 memberId: targetMemberPrimitives.publicId
             });
 
-          
+
             expect(result.id).toBe(targetMemberPrimitives.publicId);
             expect(result.status).toBe('ACTIVE');
             expect(result.role).toBe('CONTRIBUTOR');

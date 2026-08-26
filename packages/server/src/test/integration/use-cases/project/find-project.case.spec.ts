@@ -4,13 +4,22 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('FindProjectCase - Integration Tests', () => {
     let useCase: FindProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -20,11 +29,7 @@ describe('FindProjectCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new FindProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository
-        );
+        useCase = containerDI.modules.project.useCases.findProjectUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -93,7 +98,7 @@ describe('FindProjectCase - Integration Tests', () => {
             const project = await seedProjectRandom(prisma, ownerPrimitives.id);
             const projectPrimitives = project.toPrimitives();
 
-           
+
             // Establish an unauthorized membership record state to test the perimeter isolation logic
             await seedMemberRandom(prisma, projectPrimitives.id, targetPrimitives.id, {
                 status: MemberStatusVo.create('inactive')
@@ -121,14 +126,14 @@ describe('FindProjectCase - Integration Tests', () => {
             const projectPrimitives = project.toPrimitives();
 
             // Formally register the actor identity with an allowed active configuration state (ON_LEAVE)
-            await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id, {status: MemberStatusVo.create('on_leave')});
+            await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id, { status: MemberStatusVo.create('on_leave') });
 
 
             const result = await useCase.execute({
                 actorId: ownerPrimitives.publicId,
                 projectId: projectPrimitives.publicId
             });
-            
+
 
             expect(result.id).toBe(projectPrimitives.publicId);
             expect(result.title).toBe(projectPrimitives.title);

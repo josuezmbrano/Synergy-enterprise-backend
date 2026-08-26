@@ -1,14 +1,21 @@
 import { beforeAll, afterAll } from 'vitest'
 import { execSync } from 'child_process'
 import { Client } from 'pg'
-import { bootstrapLogger } from 'infrastructure/config/modules/logger.config.js'
+import { createPinoOptions } from 'infrastructure/config/modules/logger.config.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { pino } from 'pino'
+
+
+const env = getEnv()
+
+const pinoLogger = pino(createPinoOptions(env)) 
 
 
 const baseDatabaseUrl = process.env.INTERNAL_TEST_BASE_URL
 
 if (!baseDatabaseUrl) {
     const errorMsg = 'Could not locate container base URL. Make sure global setup execute properly.'
-    bootstrapLogger.error(errorMsg)
+    pinoLogger.error(errorMsg)
     throw new Error(errorMsg)
 }
 
@@ -18,21 +25,21 @@ const fileDatabaseUrl = `${baseDatabaseUrl}?schema=${uniqueSchema}&options=-c%20
 
 process.env.DATABASE_URL = fileDatabaseUrl
 
-bootstrapLogger.info({ schema: uniqueSchema }, '🧪 [Integration Setup] Isolated database schema generated')
+pinoLogger.info({ schema: uniqueSchema }, '🧪 [Integration Setup] Isolated database schema generated')
 
 
 beforeAll(async () => {
     try {
-        bootstrapLogger.info({ schema: uniqueSchema }, '⚡ [Integration Setup] Pushing Prisma schema to ephemeral database...')
+        pinoLogger.info({ schema: uniqueSchema }, '⚡ [Integration Setup] Pushing Prisma schema to ephemeral database...')
 
         execSync('npx prisma db push', {
             env: { ...process.env, DATABASE_URL: fileDatabaseUrl },
             stdio: 'ignore'
         })
 
-        bootstrapLogger.info({ schema: uniqueSchema }, '✅ [Integration Setup] Schema initialized successfully')
+        pinoLogger.info({ schema: uniqueSchema }, '✅ [Integration Setup] Schema initialized successfully')
     } catch (error) {
-        bootstrapLogger.error(error, '❌ [Integration Setup] Failed to push Prisma schema')
+        pinoLogger.error(error, '❌ [Integration Setup] Failed to push Prisma schema')
         throw error;
     }
 })
@@ -40,18 +47,32 @@ beforeAll(async () => {
 
 afterAll(async () => {
     try {
-        // Desconexión limpia del cliente Prisma singleton
-        const { default: prisma } = await import('infrastructure/lib/prisma.js')
-        await prisma.$disconnect()
-
         // Limpieza y destrucción del schema temporal
         const client = new Client({ connectionString: baseDatabaseUrl })
         await client.connect()
+
+        const res = await client.query(`
+            SELECT count(*) 
+            FROM pg_stat_activity 
+            WHERE current_setting('search_path', true) LIKE '%${uniqueSchema}%' 
+            AND pid <> pg_backend_pid();
+        `);
+
+        const activeConnections = parseInt(res.rows[0].count, 10);
+        pinoLogger.info({ schema: uniqueSchema, activeConnections }, '📊 [Integration Cleanup] Active connections snapshot');
+
+        await client.query(`
+            SELECT pg_terminate_backend(pid) 
+            FROM pg_stat_activity 
+            WHERE current_setting('search_path', true) LIKE '%${uniqueSchema}%' 
+            AND pid <> pg_backend_pid();
+        `);
+
         await client.query(`DROP SCHEMA IF EXISTS "${uniqueSchema}" CASCADE`)
         await client.end()
 
-        bootstrapLogger.info({ schema: uniqueSchema }, '🗑️ [Integration Setup] Temporary schema dropped cleanly')
+        pinoLogger.info({ schema: uniqueSchema }, '🗑️ [Integration Setup] Temporary schema dropped cleanly')
     } catch (error) {
-        bootstrapLogger.error(error, '⚠️ [Integration Setup] Failed to cleanup isolated schema')
+        pinoLogger.error(error, '⚠️ [Integration Setup] Failed to cleanup isolated schema')
     }
 })

@@ -1,11 +1,15 @@
 import { LoginUserInput } from '@project/common/schemas/user.schema.js';
 import { LoginUserCase } from 'application/use-cases/user/login-user.usecase.js';
 import type { Request, Response, NextFunction } from 'express'
-import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
+import { CookieOptionsConfig } from 'infrastructure/config/modules/cookie.config.js';
+
 
 
 export class LoginUserController {
-    constructor(private readonly loginUserUseCase: LoginUserCase) { }
+    constructor(
+        private readonly loginUserUseCase: LoginUserCase,
+        private readonly cookieConfig: CookieOptionsConfig
+    ) { }
 
     execute = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
@@ -18,7 +22,7 @@ export class LoginUserController {
 
 
             // Retrieve config and set http only cookies configuration
-            res.cookie('token', jwtToken, cookieConfig)
+            res.cookie('token', jwtToken, this.cookieConfig)
 
             res.status(200).json({
                 status: 'success',

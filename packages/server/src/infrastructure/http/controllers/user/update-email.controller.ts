@@ -1,14 +1,17 @@
 import { UpdateEmailBodySchema, UpdateUserEmailInput } from '@project/common/schemas/user.schema.js';
 import { UpdateEmailCase } from 'application/use-cases/user/update-email.usecase.js';
 import type { Request, Response, NextFunction } from 'express-serve-static-core';
-import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
+import { CookieOptionsConfig} from 'infrastructure/config/modules/cookie.config.js';
 import z from 'zod';
 
 
 type UpdateEmailBody = z.infer<typeof UpdateEmailBodySchema>
 
 export class UpdateEmailController {
-    constructor(private readonly updateEmailUseCase: UpdateEmailCase) { }
+    constructor(
+        private readonly updateEmailUseCase: UpdateEmailCase,
+        private readonly cookieConfig: CookieOptionsConfig
+    ) { }
 
     execute = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
@@ -31,7 +34,7 @@ export class UpdateEmailController {
 
             // Retrieve config and set http only cookies configuration
             
-            res.cookie('token', jwtToken, cookieConfig)
+            res.cookie('token', jwtToken, this.cookieConfig)
 
             res.status(200).json({
                 status: 'success',

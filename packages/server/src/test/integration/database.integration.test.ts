@@ -1,12 +1,26 @@
-import prisma from 'infrastructure/lib/prisma.js';
-import { nodemailerConfig } from 'infrastructure/config/modules/nodemailer-testing.config.js';
 import { NodemailService } from 'infrastructure/mailing/nodemailer/nodemailer-testing.service.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
+import { PinoLoggerAdapter } from 'infrastructure/logging/pino-logger.adapter.js';
+import { createContainer } from 'infrastructure/container/di.config.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
+import { getNodemailerConfig } from 'infrastructure/config/modules/nodemailer-testing.config.js';
+import { Env } from 'infrastructure/config/env.schema.js';
 
-const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
 describe('Integration test - Database connection', () => {
+    let pinoLogger: PinoLoggerAdapter
+    let prisma: PrismaClient
+    let environment: Env
+
+    beforeAll(() => {
+        // Instanciamos el contenedor o extraemos las dependencias de infraestructura necesarias para la suite
+        const env = getEnv()
+        const container = createContainer(env);
+        environment = container.environment.env
+        prisma = container.prisma
+        pinoLogger = container.loggerMonitorInstance.pinoLogger;
+    });
 
     it('should connect to Docker and execute a basic Postgres query.', async () => {
 
@@ -27,7 +41,7 @@ describe('Integration test - Database connection', () => {
     it('should send an email through SMTP and capture it inside Mailpit container via HTTP API.', async () => {
         pinoLogger.info('\n🐳 [Test-Mailpit] Initializing NodemailService with dynamic config...');
 
-        const mailService = new NodemailService(nodemailerConfig);
+        const mailService = new NodemailService(getNodemailerConfig(environment));
 
         const testEmailOptions = {
             to: 'test-vanguard@synergy.com',

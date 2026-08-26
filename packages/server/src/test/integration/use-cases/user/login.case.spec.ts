@@ -6,26 +6,31 @@ import { UserLastnameVo } from 'core/value-objects/user/user-lastname.vo.js';
 import { UserNameVo } from 'core/value-objects/user/user-name.vo.js';
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('LoginUserCase - Integration Tests', () => {
     let useCase: LoginUserCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
-        
+
         await prisma.verificationToken.deleteMany({});
         await prisma.task.deleteMany({});
         await prisma.project.deleteMany({});
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new LoginUserCase(
-            containerDI.repositories.userRepository,
-            containerDI.services.bcryptPasswordHasher,
-            containerDI.services.jwtAuthService
-        );
+        useCase = containerDI.modules.auth.useCases.loginUserUseCase
     });
 
     describe('Credential Validations & Security Exceptions', () => {
@@ -133,7 +138,7 @@ describe('LoginUserCase - Integration Tests', () => {
 
             expect(output).toBeDefined();
             expect(output.user.id).toBe(primitives.publicId);
-            expect(output.user.email).toBe('alex.vanguard@synergy.com'); 
+            expect(output.user.email).toBe('alex.vanguard@synergy.com');
             expect(output.token).toBeDefined();
         });
     });

@@ -1,10 +1,22 @@
 import { TokenDomainError } from 'core/errors/domain/domain-classes.error.js'
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js'
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
 import { TokenMother } from 'test/builders/token.mother.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('TokenEntityClass creation, methods testing and core logic.', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     describe('Creation, reconstitution, and basic calculation testing.', () => {
 
@@ -36,8 +48,8 @@ describe('TokenEntityClass creation, methods testing and core logic.', () => {
 
         it('should return false in isValid() if token has expired', () => {
 
-           const tokenEntity = TokenMother.reconstituteExpired()
-           expect(tokenEntity.isValid()).toBe(false)
+            const tokenEntity = TokenMother.reconstituteExpired()
+            expect(tokenEntity.isValid()).toBe(false)
         })
 
         it('should return true in isType() if type of token is the same as the one expected', () => {

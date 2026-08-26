@@ -8,12 +8,21 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('SetDoingStatusCase - Integration Tests', () => {
     let useCase: SetDoingStatusCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -22,12 +31,7 @@ describe('SetDoingStatusCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetDoingStatusCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.setDoingStatusUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -149,7 +153,7 @@ describe('SetDoingStatusCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-          
+
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creator.toPrimitives().id, devAMember.toPrimitives().id, { status: TaskStatusVo.create('TODO') });
 
             // Seed an unaligned teammate profile B inside the same project who has no relational bonds to this specific task instance
@@ -161,9 +165,9 @@ describe('SetDoingStatusCase - Integration Tests', () => {
 
             // Dispatch status mutation command targeting teammate B to assert that assignment mismatch checks block the lifecycle shift
             const execution = useCase.execute({
-                actorId: owner.toPrimitives().publicId, 
+                actorId: owner.toPrimitives().publicId,
                 taskId: task.toPrimitives().publicId,
-                targetMemberId: devBMember.toPrimitives().publicId 
+                targetMemberId: devBMember.toPrimitives().publicId
             });
 
             await expect(execution).rejects.toThrow(TaskErrorFactory.taskAssignmentMismatch().message);
@@ -177,7 +181,7 @@ describe('SetDoingStatusCase - Integration Tests', () => {
             const owner = await seedUserRandom(prisma);
             const project = await seedProjectRandom(prisma, owner.toPrimitives().id);
             const projectPrimitives = project.toPrimitives();
-            
+
 
             // Setup a fully active team contributor profile to handle task execution and active lane transition operations
             const developerUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('worker'), email: UserEmailVo.create('worker@email.com') });
@@ -187,7 +191,7 @@ describe('SetDoingStatusCase - Integration Tests', () => {
             });
             const developerPrimitives = developerMember.toPrimitives();
 
-           
+
             // Persist the targeted task aggregate instance explicitly configured in a backlog state within verified allocation limits
             const task = await seedTaskRandom(prisma, projectPrimitives.id, developerPrimitives.id, developerPrimitives.id, { status: TaskStatusVo.create('TODO') });
             const taskPrimitives = task.toPrimitives();
@@ -201,7 +205,7 @@ describe('SetDoingStatusCase - Integration Tests', () => {
 
             expect(result.status).toBe('DOING');
 
-           
+
             // Query infrastructure directly to confirm state mutations successfully bridged domain aggregates to the database tier
             const dbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });
             expect(dbTask?.status).toBe('DOING');

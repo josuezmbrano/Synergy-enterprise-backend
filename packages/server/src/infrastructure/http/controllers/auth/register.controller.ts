@@ -1,11 +1,14 @@
 import { RegisterUserInput } from '@project/common/schemas/user.schema.js';
 import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js';
 import { NextFunction, Request, Response } from 'express';
-import { cookieConfig } from 'infrastructure/config/modules/cookie.config.js';
+import { CookieOptionsConfig } from 'infrastructure/config/modules/cookie.config.js';
 
 
 export class RegisterUserController {
-    constructor(private readonly registerUserUseCase: RegisterUserCase) { }
+    constructor(
+        private readonly registerUserUseCase: RegisterUserCase,
+        private readonly cookieConfig: CookieOptionsConfig
+    ) { }
 
     execute = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
@@ -18,7 +21,7 @@ export class RegisterUserController {
 
             
             // Retrieve config and set http only cookies configuration
-            res.cookie('token', jwtToken, cookieConfig)
+            res.cookie('token', jwtToken, this.cookieConfig)
 
             res.status(201).json({
                 status: 'success',

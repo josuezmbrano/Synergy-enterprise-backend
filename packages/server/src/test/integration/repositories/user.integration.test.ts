@@ -2,13 +2,24 @@ import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { PrismaUserRepository } from 'infrastructure/repositories/user.prisma.js';
 import { UserMother } from 'test/builders/user.mother.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('PrismaUserRepository - Integration Tests', () => {
     let userRepository: PrismaUserRepository;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
 
     beforeEach(async () => {

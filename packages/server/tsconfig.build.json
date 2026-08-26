@@ -1,6 +1,8 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
+        "noEmit": false,
+        "composite": true,
         "baseUrl": ".",
         "rootDir": "./src",
         "outDir": "./dist",
@@ -25,7 +27,7 @@
     },
     "references": [
         {
-            "path": "../common"
+            "path": "../common/tsconfig.build.json"
         }
     ],
     "include": [

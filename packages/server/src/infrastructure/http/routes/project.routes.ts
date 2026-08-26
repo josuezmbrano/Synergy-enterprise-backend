@@ -1,42 +1,38 @@
 import { Router } from 'express';
-import type { Router as RouterType } from 'express-serve-static-core';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import { projectModulesContainer } from 'infrastructure/container/di/project-modules.di.js';
+import { ProjectModules } from 'infrastructure/container/di/project-modules.di.js';
 import { validateRequest } from '../middlewares/validate-request.middleware.js';
 import { CreateProjectBodySchema, UpdateProjectInfoBodySchema } from '@project/common/schemas/project.schema.js';
-
-export const projectRouter: RouterType = Router()
-
-// Destructured controllers from the DI project module container
-const {
-    archiveProjectController,
-    completeProjectController,
-    createProjectController,
-    findAllProjectsController,
-    findProjectController,
-    startProjectController,
-    unarchiveProjectController,
-    updateProjectInfoController
-} = projectModulesContainer.controllers
-
-// Destructured auth middleware from the DI base tools container
-const { checkAuth } = containerDI.middlewares
+import { MiddlewareModules } from 'infrastructure/container/di.config.js';
 
 
-// PROTECT ALL PRIVATE PROJECT ROUTES WITH THE AUTH MIDDLEWARE
-projectRouter.use(checkAuth.execute)
+export const createProjectRouter = (modules: ProjectModules, middlewares: MiddlewareModules): Router => {
+    const projectRouter = Router()
+    const { controllers } = modules
+    const { checkAuth } = middlewares
+
+    // PROTECT ALL PRIVATE PROJECT ROUTES WITH THE AUTH MIDDLEWARE
+    projectRouter.use(checkAuth.execute)
 
 
-// PRIVATE ROUTES
+    // PRIVATE ROUTES
 
-// Project collection management
-projectRouter.post('/', validateRequest(CreateProjectBodySchema), createProjectController.execute)
-projectRouter.get('/', findAllProjectsController.execute)
-projectRouter.get('/:projectId', findProjectController.execute)
-// Specific property modifications
-projectRouter.patch('/:projectId', validateRequest(UpdateProjectInfoBodySchema), updateProjectInfoController.execute)
-// State transitions
-projectRouter.patch('/:projectId/start', startProjectController.execute)
-projectRouter.patch('/:projectId/complete', completeProjectController.execute)
-projectRouter.patch('/:projectId/archive', archiveProjectController.execute)
-projectRouter.patch('/:projectId/unarchive', unarchiveProjectController.execute)
+    // Project collection management
+    projectRouter.post('/', validateRequest(CreateProjectBodySchema), controllers.createProjectController.execute)
+    projectRouter.get('/', controllers.findAllProjectsController.execute)
+    projectRouter.get('/:projectId', controllers.findProjectController.execute)
+    // Specific property modifications
+    projectRouter.patch('/:projectId', validateRequest(UpdateProjectInfoBodySchema), controllers.updateProjectInfoController.execute)
+    // State transitions
+    projectRouter.patch('/:projectId/start', controllers.startProjectController.execute)
+    projectRouter.patch('/:projectId/complete', controllers.completeProjectController.execute)
+    projectRouter.patch('/:projectId/archive', controllers.archiveProjectController.execute)
+    projectRouter.patch('/:projectId/unarchive', controllers.unarchiveProjectController.execute)
+
+    return projectRouter
+}
+
+
+
+
+
+

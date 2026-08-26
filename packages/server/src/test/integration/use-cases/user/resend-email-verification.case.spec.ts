@@ -3,14 +3,23 @@ import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js'
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 
 describe('ResendEmailVerificationCase - Integration Tests', () => {
     let useCase: ResendEmailVerificationCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -19,13 +28,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new ResendEmailVerificationCase(
-            containerDI.repositories.userRepository,
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork,
-            containerDI.loggerMonitorInstance.pinoLogger
-        );
+        useCase = containerDI.modules.auth.useCases.resendEmailVerificationUseCase
     });
 
     describe('Actor Validation & Preconditions', () => {

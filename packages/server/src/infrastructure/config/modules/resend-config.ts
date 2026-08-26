@@ -1,4 +1,5 @@
-import { env } from "infrastructure/config/env.config.js"
+import { Env } from "../env.schema.js"
+
 
 export interface ResendConfig {
     apiKey: string,
@@ -7,10 +8,13 @@ export interface ResendConfig {
 }
 
 
-const isProduction = env.NODE_ENV === 'production'
+export const getResendConfig = (env: Env): ResendConfig => {
 
-export const resendConfig: ResendConfig = Object.freeze({
-    apiKey: env.RESEND_API_KEY,
-    from: isProduction ? 'Synergy <no-reply@tudominio.com>' : 'Acme <onboarding@resend.dev>',
-    ...(env.NODE_ENV === 'development' && { overridesTo: env.DEV_PERSONAL_EMAIL })
-})
+    const isProduction = env.NODE_ENV === 'production'
+
+    return Object.freeze({
+        apiKey: env.RESEND_API_KEY,
+        from: isProduction ? 'Synergy <no-reply@tudominio.com>' : 'Acme <onboarding@resend.dev>',
+        ...(env.NODE_ENV === 'development' && { overridesTo: env.DEV_PERSONAL_EMAIL })
+    })
+}

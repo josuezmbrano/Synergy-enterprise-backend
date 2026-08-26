@@ -1,33 +1,25 @@
 import { Router } from 'express';
 import { validateRequest } from '../middlewares/validate-request.middleware.js';
 import { LoginUserSchema, RegisterUserSchema, RequestPasswordSchema, ResetPasswordSchema, VerifyEmailSchema } from '@project/common/schemas/user.schema.js';
-import { authModulesContainer } from 'infrastructure/container/di/auth-modules.di.js';
-import type { Router as RouterType } from 'express-serve-static-core';
-import { containerDI } from 'infrastructure/container/di.config.js';
-
-export const authRouter: RouterType = Router()
-
-// Destructured controllers from the DI auth module container
-const {
-    loginUserController,
-    registerUserController,
-    requestPasswordResetController,
-    resendEmailVerificationController,
-    resetPasswordController,
-    verifyEmailController
-} = authModulesContainer.controllers
-
-// Destructured auth middleware from the DI base tools container
-const { checkAuth } = containerDI.middlewares
+import { AuthModules } from 'infrastructure/container/di/auth-modules.di.js';
+import { MiddlewareModules } from 'infrastructure/container/di.config.js';
 
 
-// PUBLIC ROUTES   
-authRouter.post('/login', validateRequest(LoginUserSchema), loginUserController.execute)
-authRouter.post('/register', validateRequest(RegisterUserSchema), registerUserController.execute)
-authRouter.post('/request-password-reset', validateRequest(RequestPasswordSchema), requestPasswordResetController.execute)
-authRouter.post('/reset-password', validateRequest(ResetPasswordSchema), resetPasswordController.execute)
-authRouter.post('/verify-email', validateRequest(VerifyEmailSchema), verifyEmailController.execute)
+export const createAuthRouter = (modules: AuthModules, middlewares: MiddlewareModules): Router => {
+    const authRouter = Router()
+    const { controllers } = modules
+    const { checkAuth } = middlewares
+
+    // PUBLIC ROUTES   
+    authRouter.post('/login', validateRequest(LoginUserSchema), controllers.loginUserController.execute)
+    authRouter.post('/register', validateRequest(RegisterUserSchema), controllers.registerUserController.execute)
+    authRouter.post('/request-password-reset', validateRequest(RequestPasswordSchema), controllers.requestPasswordResetController.execute)
+    authRouter.post('/reset-password', validateRequest(ResetPasswordSchema), controllers.resetPasswordController.execute)
+    authRouter.post('/verify-email', validateRequest(VerifyEmailSchema), controllers.verifyEmailController.execute)
 
 
-// PRIVATE ROUTES
-authRouter.post('/resend-email-verification', checkAuth.execute, resendEmailVerificationController.execute)
+    // PRIVATE ROUTES
+    authRouter.post('/resend-email-verification', checkAuth.execute, controllers.resendEmailVerificationController.execute)
+
+    return authRouter
+}

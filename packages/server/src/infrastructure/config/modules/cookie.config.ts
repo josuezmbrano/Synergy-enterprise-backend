@@ -1,6 +1,7 @@
-import { env } from "../env.config.js"
+import { Env } from "../env.schema.js"
 
-interface CookieOptionsConfig {
+
+export interface CookieOptionsConfig {
     httpOnly: boolean
     secure: boolean
     sameSite: 'strict' | 'lax' | 'none'
@@ -8,9 +9,12 @@ interface CookieOptionsConfig {
     maxAge: number
 }
 
-const isProduction = env.NODE_ENV === 'production'
 
-export const cookieConfig: CookieOptionsConfig = Object.freeze({
+export const getCookieConfig = (env: Env): CookieOptionsConfig => {
+
+    const isProduction = env.NODE_ENV === 'production'
+
+    return Object.freeze({
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? ('strict' as const) : ('lax' as const),
@@ -20,4 +24,5 @@ export const cookieConfig: CookieOptionsConfig = Object.freeze({
             development: 8 * 60 * 60 * 1000,
             test: 5 * 60 * 1000
         }[env.NODE_ENV]
-})
+    })
+}

@@ -7,13 +7,22 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('SetActiveStatusCase - Integration Tests', () => {
     let useCase: SetActiveStatusCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -23,11 +32,7 @@ describe('SetActiveStatusCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetActiveStatusCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository
-        );
+        useCase = containerDI.modules.member.useCases.setActiveStatusUseCase
     });
 
     describe('Guards & Resource Alignment', () => {

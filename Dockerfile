@@ -14,7 +14,7 @@ RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN pnpm --filter @project/server run prisma:generate
+RUN pnpm run server:prisma-generate
 RUN pnpm build:all
 
 RUN pnpm --filter @project/server deploy --legacy --prod /prod/server

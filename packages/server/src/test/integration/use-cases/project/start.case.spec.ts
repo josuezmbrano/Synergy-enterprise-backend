@@ -6,13 +6,22 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { ProjectStatusVo } from 'core/value-objects/project/project-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('StartProjectCase - Integration Tests', () => {
     let useCase: StartProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -22,12 +31,7 @@ describe('StartProjectCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new StartProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.project.useCases.startProjectUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -49,7 +53,7 @@ describe('StartProjectCase - Integration Tests', () => {
 
             const execution = useCase.execute({
                 actorId: actorPrimitives.publicId,
-                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1' 
+                projectId: '4f0a20f7-0749-4fb5-9f56-6a56f6fb05b1'
             });
 
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectNotFound().message);
@@ -111,7 +115,7 @@ describe('StartProjectCase - Integration Tests', () => {
                 projectId: projectPrimitives.publicId
             });
 
-  
+
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectMembersRequired().message);
         });
 
@@ -124,7 +128,7 @@ describe('StartProjectCase - Integration Tests', () => {
             const projectPrimitives = project.toPrimitives();
 
             await seedMemberRandom(prisma, projectPrimitives.id, ownerPrimitives.id, { role: MemberRoleVo.create('admin'), status: MemberStatusVo.create('active') });
-            
+
             // Seed an additional valid team participant to fulfill membership invariants while keeping the task registry completely blank
             const collaborator = await seedUserRandom(prisma, { username: UserUsernameVo.create('maria'), email: UserEmailVo.create('maria@email.com') });
             await seedMemberRandom(prisma, projectPrimitives.id, collaborator.id.value, {
@@ -138,7 +142,7 @@ describe('StartProjectCase - Integration Tests', () => {
                 projectId: projectPrimitives.publicId
             });
 
-            
+
             await expect(execution).rejects.toThrow(ProjectErrorFactory.projectTasksRequired().message);
         });
     });
@@ -162,7 +166,7 @@ describe('StartProjectCase - Integration Tests', () => {
             });
             const ownerMemberPrimitives = ownerMember.toPrimitives();
 
-         
+
             // Register an active operational worker to satisfy structural team size constraints
             const collaborator = await seedUserRandom(prisma, { username: UserUsernameVo.create('colab'), email: UserEmailVo.create('colab@email.com') });
             const collaboratorPrimitives = collaborator.toPrimitives();
@@ -174,23 +178,23 @@ describe('StartProjectCase - Integration Tests', () => {
             // Populate the entity aggregate perimeter with an initial operational task setup
             await seedTaskRandom(prisma, projectPrimitives.id, ownerMemberPrimitives.id, null);
 
-     
+
             const preFetchDb = await prisma.project.findUnique({
                 where: { id: projectPrimitives.id }
             });
             expect(preFetchDb?.status).toBe('PLANNED');
 
-       
+
             const result = await useCase.execute({
                 actorId: ownerPrimitives.publicId,
                 projectId: projectPrimitives.publicId
             });
 
-   
+
             expect(result.id).toBe(projectPrimitives.publicId);
             expect(result.status).toBe('IN_PROGRESS');
 
-        
+
             const postFetchDb = await prisma.project.findUnique({
                 where: { id: projectPrimitives.id }
             });

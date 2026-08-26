@@ -4,10 +4,22 @@ import { UserLastnameVo } from 'core/value-objects/user/user-lastname.vo.js'
 import { UserNameVo } from 'core/value-objects/user/user-name.vo.js'
 import { UserPasswordVo } from 'core/value-objects/user/user-password.vo.js'
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js'
+import { getEnv } from 'infrastructure/config/env.config.js'
+import { createContainer } from 'infrastructure/container/di.config.js'
 import { UserMother } from 'test/builders/user.mother.js'
-import { expectDomainError } from 'test/utils/test-errors.utils.js'
+import { createDomainErrorAsserter } from 'test/utils/test-errors.utils.js'
 
 describe('UserEntityClass creation, methods testing and core logic', () => {
+
+    let expectDomainError: ReturnType<typeof createDomainErrorAsserter>
+
+    beforeAll(() => {
+        const env = getEnv();
+        const container = createContainer(env);
+        const pinoLogger = container.loggerMonitorInstance;
+
+        expectDomainError = createDomainErrorAsserter(pinoLogger);
+    });
 
     beforeEach(() => {
         vi.useFakeTimers();
@@ -60,7 +72,7 @@ describe('UserEntityClass creation, methods testing and core logic', () => {
 
             it('should correctly update username and mark usernameUpdatedAt and updatedAt fields on entity', () => {
 
-                const userEntityReconstituted = UserMother.reconstituteDefault({usernameUpdatedAt: null})
+                const userEntityReconstituted = UserMother.reconstituteDefault({ usernameUpdatedAt: null })
                 const previousUpdatedAt = userEntityReconstituted.updatedAtDate.value
 
                 vi.advanceTimersByTime(10000)

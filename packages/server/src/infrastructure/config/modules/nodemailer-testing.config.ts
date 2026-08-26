@@ -1,5 +1,4 @@
-import { env } from "infrastructure/config/env.config.js"
-
+import { Env } from "../env.schema.js"
 
 export interface NodemailerConfig {
     host: string
@@ -10,11 +9,14 @@ export interface NodemailerConfig {
     }
 }
 
-export const nodemailerConfig: NodemailerConfig = Object.freeze({
-    host: env.TEST_MAILPIT_HOST,
-    port: env.TEST_MAILPIT_SMTP_PORT,
-    secure: false,
-    tls: {
-        rejectUnauthorized: false
-    }
-})
+export const getNodemailerConfig = (env: Env): NodemailerConfig => {
+
+    return Object.freeze({
+        host: env.TEST_MAILPIT_HOST,
+        port: env.TEST_MAILPIT_SMTP_PORT,
+        secure: false,
+        tls: {
+            rejectUnauthorized: false
+        }
+    })
+}

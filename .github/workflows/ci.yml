@@ -32,13 +32,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm --filter @project/server run prisma:generate
+        run: pnpm run server:prisma-generate
 
+      - name: Typecheck
+        run: pnpm typecheck:build
+      
       - name: Build monorepo packages
         run: pnpm build:all
     
-      - name: Typecheck
-        run: pnpm typecheck
+
  
   docker:
     name: Docker Build & Verify
@@ -58,4 +60,6 @@ jobs:
             context: .
             file: ./Dockerfile
             push: false
-            tags: synergy-server:test 
+            tags: synergy-server:test
+            cache-from: type=gha
+            cache-to: type=gha,mode=max 

@@ -1,4 +1,4 @@
-import { containerDI } from '../di.config.js';
+import { ContainerBase } from '../di.base.js';
 
 // USE CASE IMPORTS
 import { CreateProjectCase } from 'application/use-cases/project/create-project.usecase.js';
@@ -21,49 +21,53 @@ import { ArchiveProjectController } from 'infrastructure/http/controllers/projec
 import { CompleteProjectController } from 'infrastructure/http/controllers/project/complete-project.controller.js';
 
 
-// USE CASES INSTANTIATION
-const createProjectUseCase = new CreateProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.transactionalCoordinator.unitOfWork)
-const findAllProjectsUseCase = new FindAllProjectsCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const findProjectUseCase = new FindProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.userRepository)
-const unarchiveProjectUseCase = new UnarchiveProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const updateProjectInfoUseCase = new UpdateProjectInfoCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const archiveProjectUseCase = new ArchiveProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
-const completeProjectUseCase = new CompleteProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository)
-const startProjectUseCase = new StartProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository)
-
-// CONTROLLERS INSTANTIATION
-const createProjectController = new CreateProjectController(createProjectUseCase)
-const findAllProjectsController = new FindAllProjectsController(findAllProjectsUseCase)
-const findProjectController = new FindProjectController(findProjectUseCase)
-const unarchiveProjectController = new UnarchiveProjectController(unarchiveProjectUseCase)
-const updateProjectInfoController = new UpdateProjectInfoController(updateProjectInfoUseCase)
-const archiveProjectController = new ArchiveProjectController(archiveProjectUseCase)
-const completeProjectController = new CompleteProjectController(completeProjectUseCase)
-const startProjectController = new StartProjectController(startProjectUseCase)
 
 
+export const createProjectModules = (containerDI: ContainerBase) => {
 
+    // USE CASES INSTANTIATION
+    const createProjectUseCase = new CreateProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.userRepository, containerDI.transactionalCoordinator.unitOfWork)
+    const findAllProjectsUseCase = new FindAllProjectsCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const findProjectUseCase = new FindProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.memberRepository, containerDI.repositories.userRepository)
+    const unarchiveProjectUseCase = new UnarchiveProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const updateProjectInfoUseCase = new UpdateProjectInfoCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const archiveProjectUseCase = new ArchiveProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.memberRepository)
+    const completeProjectUseCase = new CompleteProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository)
+    const startProjectUseCase = new StartProjectCase(containerDI.repositories.projectRepository, containerDI.repositories.userRepository, containerDI.repositories.taskRepository, containerDI.repositories.memberRepository)
 
-export const projectModulesContainer = {
-    useCases: {
-        createProjectUseCase,
-        findAllProjectsUseCase,
-        findProjectUseCase,
-        unarchiveProjectUseCase,
-        updateProjectInfoUseCase,
-        archiveProjectUseCase,
-        completeProjectUseCase,
-        startProjectUseCase
-    },
+    // CONTROLLERS INSTANTIATION
+    const createProjectController = new CreateProjectController(createProjectUseCase)
+    const findAllProjectsController = new FindAllProjectsController(findAllProjectsUseCase)
+    const findProjectController = new FindProjectController(findProjectUseCase)
+    const unarchiveProjectController = new UnarchiveProjectController(unarchiveProjectUseCase)
+    const updateProjectInfoController = new UpdateProjectInfoController(updateProjectInfoUseCase)
+    const archiveProjectController = new ArchiveProjectController(archiveProjectUseCase)
+    const completeProjectController = new CompleteProjectController(completeProjectUseCase)
+    const startProjectController = new StartProjectController(startProjectUseCase)
 
-    controllers: {
-        createProjectController,
-        findAllProjectsController,
-        findProjectController,
-        unarchiveProjectController,
-        updateProjectInfoController,
-        archiveProjectController,
-        completeProjectController,
-        startProjectController
-    }
-} as const
+    return {
+        useCases: {
+            createProjectUseCase,
+            findAllProjectsUseCase,
+            findProjectUseCase,
+            unarchiveProjectUseCase,
+            updateProjectInfoUseCase,
+            archiveProjectUseCase,
+            completeProjectUseCase,
+            startProjectUseCase
+        },
+
+        controllers: {
+            createProjectController,
+            findAllProjectsController,
+            findProjectController,
+            unarchiveProjectController,
+            updateProjectInfoController,
+            archiveProjectController,
+            completeProjectController,
+            startProjectController
+        }
+    } as const
+}
+
+export type ProjectModules = ReturnType<typeof createProjectModules>

@@ -7,12 +7,21 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskPriorityVo } from 'core/value-objects/task/task-priority.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('SetLowPriorityCase - Integration Tests', () => {
     let useCase: SetLowPriorityCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -21,12 +30,7 @@ describe('SetLowPriorityCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetLowPriorityCase(
-            containerDI.repositories.taskRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.task.useCases.setLowPriorityUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -47,8 +51,8 @@ describe('SetLowPriorityCase - Integration Tests', () => {
 
             // Dispatch an operation containing an unmapped task UUID to force an infrastructure lookup failure
             const execution = useCase.execute({
-                actorId: actor.toPrimitives().publicId, 
-                taskId: 'db710260-e4b5-4b07-9b24-5d51dfbfbc8d' 
+                actorId: actor.toPrimitives().publicId,
+                taskId: 'db710260-e4b5-4b07-9b24-5d51dfbfbc8d'
             });
 
             await expect(execution).rejects.toThrow(TaskErrorFactory.taskNotFound().message);
@@ -64,7 +68,7 @@ describe('SetLowPriorityCase - Integration Tests', () => {
                 role: MemberRoleVo.create('admin'),
                 status: MemberStatusVo.create('active')
             });
-            
+
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creator.toPrimitives().id, creator.toPrimitives().id);
 
 
@@ -73,7 +77,7 @@ describe('SetLowPriorityCase - Integration Tests', () => {
 
             // Fire request to verify the aggregate strictly obfuscates the error to protect workspace metadata leakage
             const execution = useCase.execute({
-                actorId: stranger.toPrimitives().publicId, 
+                actorId: stranger.toPrimitives().publicId,
                 taskId: task.toPrimitives().publicId
             });
 
@@ -91,11 +95,11 @@ describe('SetLowPriorityCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-          
+
             // Persist a task aggregate created by the manager to evaluate external modification restrictions
             const task = await seedTaskRandom(prisma, projectPrimitives.id, managerMember.toPrimitives().id, null);
 
-         
+
             // Seed a base contributor profile lacking elevated privileges or ownership bonds to this resource
             const plebUser = await seedUserRandom(prisma, { username: UserUsernameVo.create('pleb'), email: UserEmailVo.create('pleb@email.com') });
             await seedMemberRandom(prisma, projectPrimitives.id, plebUser.toPrimitives().id, {
@@ -105,11 +109,11 @@ describe('SetLowPriorityCase - Integration Tests', () => {
 
             // Dispatch command to assert that standard contributors are barred from mutating core task fields like priority de-escalation
             const execution = useCase.execute({
-                actorId: plebUser.toPrimitives().publicId, 
+                actorId: plebUser.toPrimitives().publicId,
                 taskId: task.toPrimitives().publicId
             });
 
-            
+
             await expect(execution).rejects.toThrow(TaskErrorFactory.taskNotPermittedToEdit().message);
         });
     });
@@ -127,7 +131,7 @@ describe('SetLowPriorityCase - Integration Tests', () => {
                 status: MemberStatusVo.create('active')
             });
 
-           
+
             // Persist the targeted task aggregate instance explicitly configured with a baseline HIGH priority state and null assignee
             const task = await seedTaskRandom(prisma, projectPrimitives.id, creatorMember.toPrimitives().id, null, {
                 priority: TaskPriorityVo.create('HIGH')
@@ -136,18 +140,18 @@ describe('SetLowPriorityCase - Integration Tests', () => {
 
             // Run the state de-escalation routine under fully satisfied identity, tenant, and role-based permissions
             const result = await useCase.execute({
-                actorId: owner.toPrimitives().publicId, 
+                actorId: owner.toPrimitives().publicId,
                 taskId: taskPrimitives.publicId
             });
 
             expect(result.priority).toBe('LOW');
             expect(result.assignedTo).toBeNull();
 
-            
+
             // Query infrastructure directly to confirm state mutations successfully bridged domain aggregates to the database tier
             const dbTask = await prisma.task.findUnique({ where: { id: taskPrimitives.id } });
             expect(dbTask?.priority).toBe('LOW');
         });
     });
-    
+
 });

@@ -1,7 +1,6 @@
 import { BaseDomainError } from 'core/errors/base-domain.error.js'
-import { containerDI } from 'infrastructure/container/di.config.js'
+import { LoggerMonitor } from 'infrastructure/container/di.config.js'
 
-const pinoLogger = containerDI.loggerMonitorInstance.pinoLogger
 
 export interface ErrorMetadata {
     field: string
@@ -10,30 +9,36 @@ export interface ErrorMetadata {
     description: string
 }
 
-export const expectDomainError = <T extends BaseDomainError>(
-   errorClass: new (...args: any[]) => T, act: () => void, assertions: number, code?: string, reason?: string, field?: string
-) => {
+export const createDomainErrorAsserter = (logger: LoggerMonitor) => {
 
-    expect.assertions(assertions)
-    expect(act).toThrow()
+    const pinoLogger = logger.pinoLogger
 
-    try {
-        act()
-    } catch (error) {
+    return <T extends BaseDomainError>(
+        errorClass: new (...args: any[]) => T, act: () => void, assertions: number, code?: string, reason?: string, field?: string
+    ) => {
 
-        if (error instanceof BaseDomainError) {
-            const meta = error.metadata as ErrorMetadata | undefined
 
-            expect(error).toBeInstanceOf(errorClass)
-            
-            if (reason) expect(meta?.reason).toBe(reason)
-            if (field) expect(meta?.field).toBe(field)
-            if (code) expect(error.code).toBe(code)
-        
-            return
+        expect.assertions(assertions)
+        expect(act).toThrow()
+
+        try {
+            act()
+        } catch (error) {
+
+            if (error instanceof BaseDomainError) {
+                const meta = error.metadata as ErrorMetadata | undefined
+
+                expect(error).toBeInstanceOf(errorClass)
+
+                if (reason) expect(meta?.reason).toBe(reason)
+                if (field) expect(meta?.field).toBe(field)
+                if (code) expect(error.code).toBe(code)
+
+                return
+            }
+
+            pinoLogger.error('Something went wrong', error)
+            throw error
         }
-
-        pinoLogger.error('Something went wrong', error)
-        throw(error)
     }
 }

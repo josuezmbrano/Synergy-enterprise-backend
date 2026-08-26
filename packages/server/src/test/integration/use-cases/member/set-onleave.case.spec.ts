@@ -7,13 +7,22 @@ import { MemberStatusVo } from 'core/value-objects/member/member-status.vo.js';
 import { TaskStatusVo } from 'core/value-objects/task/task-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedTaskRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 describe('SetOnLeaveStatusCase - Integration Tests', () => {
     let useCase: SetOnLeaveStatusCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -23,12 +32,7 @@ describe('SetOnLeaveStatusCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new SetOnLeaveStatusCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.taskRepository
-        );
+        useCase = containerDI.modules.member.useCases.setOnLeaveStatusUseCase
     });
 
     describe('Guards & Resource Matching Constraints', () => {
@@ -82,7 +86,7 @@ describe('SetOnLeaveStatusCase - Integration Tests', () => {
             const strangerPrimitives = stranger.toPrimitives();
             const projectB = await seedProjectRandom(prisma, strangerPrimitives.id);
             const projectBPrimitives = projectB.toPrimitives();
-            
+
             // Setup the candidate target profile strictly assigned to the foreign project context space
             const targetMemberB = await seedMemberRandom(prisma, projectBPrimitives.id, strangerPrimitives.id);
             const targetMemberBPrimitives = targetMemberB.toPrimitives();
@@ -220,7 +224,7 @@ describe('SetOnLeaveStatusCase - Integration Tests', () => {
             ]
 
             for (const contributor of contributors) {
-                const contributorUser = await seedUserRandom(prisma, {username: contributor.username, email: contributor.email})
+                const contributorUser = await seedUserRandom(prisma, { username: contributor.username, email: contributor.email })
                 const primitives = contributorUser.toPrimitives()
                 await seedMemberRandom(prisma, projectPrimitives.id, primitives.id, {
                     role: MemberRoleVo.create('contributor'),
@@ -323,7 +327,7 @@ describe('SetOnLeaveStatusCase - Integration Tests', () => {
             ]
 
             for (const contributor of contributors) {
-                const contributorUser = await seedUserRandom(prisma, {username: contributor.username, email: contributor.email})
+                const contributorUser = await seedUserRandom(prisma, { username: contributor.username, email: contributor.email })
                 const primitives = contributorUser.toPrimitives()
                 await seedMemberRandom(prisma, projectPrimitives.id, primitives.id, {
                     role: MemberRoleVo.create('contributor'),
@@ -331,7 +335,7 @@ describe('SetOnLeaveStatusCase - Integration Tests', () => {
                 })
             }
 
-         
+
             // Execute the operational update under fully satisfied system safety margins
             const result = await useCase.execute({
                 actorId: ownerPrimitives.publicId,

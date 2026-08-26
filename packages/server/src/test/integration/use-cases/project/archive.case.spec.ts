@@ -5,12 +5,21 @@ import { DateVo } from 'core/value-objects/common/date.vo.js';
 import { ProjectStatusVo } from 'core/value-objects/project/project-status.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('ArchiveProjectCase - Integration Tests', () => {
     let useCase: ArchiveProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -20,11 +29,7 @@ describe('ArchiveProjectCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new ArchiveProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.memberRepository
-        );
+        useCase = containerDI.modules.project.useCases.archiveProjectUseCase
     });
 
     describe('Guards & Authorization Constraints', () => {
@@ -58,7 +63,7 @@ describe('ArchiveProjectCase - Integration Tests', () => {
             const actorPrimitives = actor.toPrimitives();
 
             // Seed a distinct separate user account to act as the true owner of the isolated target project
-            const stranger = await seedUserRandom(prisma, {username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@gmail.com')});
+            const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@gmail.com') });
             const strangerPrimitives = stranger.toPrimitives();
 
             // Persist a valid active project entry completely isolated from the main operational actor scope
@@ -110,21 +115,21 @@ describe('ArchiveProjectCase - Integration Tests', () => {
                 projectId: projectPrimitives.publicId
             });
 
-  
+
             expect(result.id).toBe(projectPrimitives.publicId);
-            expect(result.archivedAt).not.toBeNull(); 
+            expect(result.archivedAt).not.toBeNull();
             expect(result.status).toBe('ARCHIVED');
 
 
             const postFetchDb = await prisma.project.findUnique({
                 where: { id: projectPrimitives.id }
             });
-            
-            expect(postFetchDb?.archived_at).not.toBeNull(); 
+
+            expect(postFetchDb?.archived_at).not.toBeNull();
             expect(postFetchDb?.status).toBe('ARCHIVED');
-            expect(postFetchDb?.completed_at).not.toBeNull()   
+            expect(postFetchDb?.completed_at).not.toBeNull()
             expect(postFetchDb?.updated_at).toBeDefined();
         });
     });
-    
+
 });

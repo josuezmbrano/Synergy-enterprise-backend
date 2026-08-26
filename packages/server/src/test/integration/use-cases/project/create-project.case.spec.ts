@@ -3,12 +3,21 @@ import { ProjectErrorFactory } from 'core/errors/factories/project-factory.error
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedUserRandom } from 'test/utils/db-seeder.js';
 
 describe('CreateProjectCase - Integration Tests with Unit of Work', () => {
     let useCase: CreateProjectCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -18,12 +27,7 @@ describe('CreateProjectCase - Integration Tests with Unit of Work', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new CreateProjectCase(
-            containerDI.repositories.projectRepository,
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.transactionalCoordinator.unitOfWork
-        );
+        useCase = containerDI.modules.project.useCases.createProjectUseCase
     });
 
     describe('Business Rules & Validations', () => {
@@ -67,11 +71,11 @@ describe('CreateProjectCase - Integration Tests with Unit of Work', () => {
         it('should allow two different users to create projects with the exact same title without collision', async () => {
             // Seed two separate distinct user accounts to verify that project title unique constraints are scoped per user
             const userA = await seedUserRandom(prisma);
-            const userB = await seedUserRandom(prisma, {username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@gmail.com')});
-            
+            const userB = await seedUserRandom(prisma, { username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@gmail.com') });
+
             const primitivesA = userA.toPrimitives();
             const primitivesB = userB.toPrimitives();
-            
+
             const sharedTitle = 'PROYECTO COMPARTIDO';
 
             await useCase.execute({
@@ -88,14 +92,14 @@ describe('CreateProjectCase - Integration Tests with Unit of Work', () => {
                 category: 'DEVELOPMENT/ENGINEERING'
             });
 
-            
+
             await expect(executionB).resolves.not.toThrow();
 
-            
+
             const dbProjects = await prisma.project.findMany({
                 where: { title: sharedTitle }
             });
-            
+
             expect(dbProjects.length).toBe(2);
         });
     });

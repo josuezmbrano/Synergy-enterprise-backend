@@ -1,13 +1,22 @@
 import { RequestPasswordResetCase } from 'application/use-cases/user/request-password-reset.usecase.js';
 import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('RequestPasswordResetCase - Integration Tests', () => {
     let useCase: RequestPasswordResetCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env)
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
         await prisma.verificationToken.deleteMany({});
@@ -16,13 +25,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new RequestPasswordResetCase(
-            containerDI.repositories.userRepository,
-            containerDI.repositories.verificationTokenRepository,
-            containerDI.services.mailService,
-            containerDI.transactionalCoordinator.unitOfWork,
-            containerDI.loggerMonitorInstance.pinoLogger
-        );
+        useCase = containerDI.modules.auth.useCases.requestPasswordResetUseCase
     });
 
     describe('User Enumeration Protection & Silent Return', () => {
@@ -116,7 +119,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
 
         it('should successfully complete the entire password reset request workflow under normal conditions (Happy Path)', async () => {
             // Seed a legitimate active user account to execute the regular state machine branch
-            const userEntity = await seedUserDefault(prisma, {email: UserEmailVo.create('someemail@gmail.com')});
+            const userEntity = await seedUserDefault(prisma, { email: UserEmailVo.create('someemail@gmail.com') });
             const primitives = userEntity.toPrimitives();
 
             const output = await useCase.execute({ email: primitives.email });
@@ -147,7 +150,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
 
         it('should complete execution successfully even if the mail server delivery fails (try/catch resilience)', async () => {
             // Seed a regular user profile to dissociate safe database commits from downstream outbox service disruptions
-            const userEntity = await seedUserDefault(prisma, {email: UserEmailVo.create('otheremail@gmail.com')});
+            const userEntity = await seedUserDefault(prisma, { email: UserEmailVo.create('otheremail@gmail.com') });
             const primitives = userEntity.toPrimitives();
 
             // Intercept downstream communication layers to force a simulated infrastructure timeout error

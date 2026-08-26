@@ -3,14 +3,23 @@ import { ProjectErrorFactory } from 'core/errors/factories/project-factory.error
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
-import { containerDI } from 'infrastructure/container/di.config.js';
-import prisma from 'infrastructure/lib/prisma.js';
+import { getEnv } from 'infrastructure/config/env.config.js';
+import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedMemberRandom, seedProjectRandom, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
 
 describe('FindAllMembersCase - Integration Tests', () => {
     let useCase: FindAllMembersCase;
+    let containerDI: ApplicationContainer
+    let prisma: PrismaClient
+
+    beforeAll(() => {
+        const env = getEnv()
+        containerDI = createContainer(env);
+        prisma = containerDI.prisma
+    })
 
     beforeEach(async () => {
 
@@ -20,11 +29,7 @@ describe('FindAllMembersCase - Integration Tests', () => {
         await prisma.project.deleteMany({});
         await prisma.user.deleteMany({});
 
-        useCase = new FindAllMembersCase(
-            containerDI.repositories.memberRepository,
-            containerDI.repositories.userRepository,
-            containerDI.repositories.projectRepository
-        );
+        useCase = containerDI.modules.member.useCases.findAllMembersUseCase
     });
 
     describe('Guards & Security Constraints', () => {
@@ -60,7 +65,7 @@ describe('FindAllMembersCase - Integration Tests', () => {
             // Seed a distinct separate user account to act as the true owner of the isolated target project
             const stranger = await seedUserRandom(prisma, { username: UserUsernameVo.create('pepe'), email: UserEmailVo.create('pepe@gmail.com') });
             const strangerPrimitives = stranger.toPrimitives();
-            
+
             // Persist a valid project entry completely isolated from the main operational actor scope
             const project = await seedProjectRandom(prisma, strangerPrimitives.id);
             const projectPrimitives = project.toPrimitives();
