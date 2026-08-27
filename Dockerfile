@@ -21,15 +21,17 @@ RUN pnpm --filter @project/server deploy --legacy --prod /prod/server
 
 # STAGE 2: Runner
 
-FROM node:24-alpine AS runner
+FROM node:24.17-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 synergyuser
+RUN apk upgrade --no-cache && && \ 
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 synergyuser && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --chown=synergyuser:nodejs --from=builder /prod/server ./
 

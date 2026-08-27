@@ -14,6 +14,15 @@
     "typecheck": "pnpm -r typecheck:all",
     "typecheck:build": "pnpm -r typecheck:build"
   },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.18",
+      "lodash": "^4.18.0",
+      "hono": "^4.12.25",
+      "fast-uri": "^3.1.5",
+      "deepmerge-ts": "^8.0.0"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
