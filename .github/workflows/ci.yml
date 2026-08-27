@@ -83,18 +83,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Run Snyk Code & Open Source Scan to check for vulnerabilities
+      - name: Run Snyk Code to generate SARIF
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{secrets.SNYK_TOKEN}}
         with:
-          args: --monitor --org=josuezmbrano --all-projects --severity-threshold=high --sarif-file-output=snyk.sarif
+          args: --all-projects --severity-threshold=high --sarif-file-output=snyk.sarif
 
       - name: Upload result to Github Code Scanning
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: snyk.sarif
+
+      - name: Run Snyk Monitor to update Snyk Dashboard
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: --org=josuezmbrano --all-projects --strict-out-of-sync=false
 
   docker:
     name: Docker Build, Verify & Container Security Scan
