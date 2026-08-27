@@ -35,16 +35,49 @@ jobs:
         run: pnpm run server:prisma-generate
 
       - name: Typecheck
-        run: pnpm typecheck:build
+        run: pnpm run typecheck:build
       
       - name: Build monorepo packages
-        run: pnpm build:all
+        run: pnpm run build:all
+
+
+  testing:
+    name: Run Automated Tests
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node JS
+        uses: actions/setup-node@v7
+        with: 
+            node-version: 24
+            cache: 'pnpm'
+
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y openssl
+    
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm run server:prisma-generate
+      
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Integration tests
+        run: test:integration
     
 
- 
   docker:
     name: Docker Build & Verify
-    needs: validate
+    needs: testing
     runs-on: ubuntu-latest
 
     steps:
