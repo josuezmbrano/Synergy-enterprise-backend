@@ -19,6 +19,7 @@ build/
 # Archivos temporales de testing y snapshots
 coverage/
 .vitest/
+.snap
 
 # Sistema y Editores
 .DS_Store
