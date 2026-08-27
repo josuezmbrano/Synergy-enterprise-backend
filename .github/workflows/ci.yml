@@ -73,7 +73,7 @@ jobs:
         run: pnpm run test:integration
 
   snyk:
-    name: Dependency Security Analisis (SCA, SAST & Secret Scan)
+    name: Security Analisis (SCA, SAST & Secret Scan)
     needs: testing
     permissions:
       security-events: write
