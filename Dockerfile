@@ -1,6 +1,6 @@
 # STAGE 1: Builder
 
-FROM node:24:17-alpine AS builder
+FROM node:24.17-alpine AS builder
 
 WORKDIR /workspace
 
