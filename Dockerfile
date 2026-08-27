@@ -28,7 +28,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-RUN apk upgrade --no-cache && && \ 
+RUN apk upgrade --no-cache && \ 
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 synergyuser && \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
