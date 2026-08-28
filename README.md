@@ -10,7 +10,7 @@
 [![pnpm](https://img.shields.io/badge/pnpm-v10.21.0-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Vitest](https://img.shields.io/badge/Vitest-v4.1.5-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
-A production-grade RESTful API built with **TypeScript**, **Node.js**, and **Express**, adhering to **Clean Architecture** and **Domain-Driven Design (DDD)** principles. Engineered with strict type safety, manual Dependency Injection (Composition Root), transactional Unit of Work pattern, and comprehensive integration testing.
+A production-grade RESTful API built with **TypeScript**, **Node.js**, and **Express**, adhering to **Clean Architecture** and **Domain-Driven Design (DDD)** principles. Engineered with strict type safety, decoupled Dependency Injection using factories (createContainer()), transactional Unit of Work pattern, and comprehensive integration testing.
 
 > 📖 **Deep Dive:** For an exhaustive breakdown of architectural patterns, structural typing prevention, and ADRs (Architectural Decision Records), please refer to the [ARCHITECTURE.md](./ARCHITECTURE.us.md).
 
@@ -21,7 +21,7 @@ The system strictly adheres to the **Clean Architecture** concentric layer bound
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           INFRASTRUCTURE LAYER                              │
-│  [Express Routers]   [Prisma ORM]   [Mailpit / Resend]   [DI Containers]    │
+│  [Express Routers]   [Prisma ORM]   [Mailpit / Resend]   [DI Factories]     │
 │                                                                             │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │                         APPLICATION LAYER                           │   │
@@ -45,7 +45,7 @@ The system strictly adheres to the **Clean Architecture** concentric layer bound
 ## 🚀 Key Design Patterns & Engineering Highlights
 
 * **Domain-Driven Design & Deep Immutability:** Encapsulated rich domain models using custom `BaseValueObject` classes fortified with recursive `deepFreeze` and discriminant literals (`voType`, `identifierType`) to prevent TypeScript structural typing collisions.
-* **Manual Dependency Injection (Composition Root):** Custom static IoC container (`di.config.ts`) using TypeScript's `as const`, avoiding heavyweight framework magic, decorators, or runtime reflection overhead—optimizing Serverless cold starts.
+* **Decoupled Dependency Injection:** (Composition Root via Factories): Complete elimination of global mutable singletons. Application dependencies and instances are created dynamically using factory functions (createContainer(), createApp(), createServer()), optimizing cold-start times in Serverless environments and isolating state between tests.
 * **Unit of Work & Transactions:** Implicit ACID transaction handling backed by Node.js `AsyncLocalStorage` (`tx-storage`) for seamless Prisma database operations across domain boundaries without leaking the ORM.
 * **Monorepo Boundary Validation (Fail-Fast):** Request payloads are sanitized and validated via **Zod** using a shared workspace (`@project/common`), enforcing strict perimeter security before hitting controllers.
 * **Prisma Driver Adapters (v7):** Configured to dynamically use `@prisma/adapter-neon` (WebSockets) for Serverless environments, and native TCP (`@prisma/adapter-pg`) for isolated integration tests running against ephemeral Docker containers via Testcontainers.
@@ -84,7 +84,7 @@ src/
 │   ├── lib/                     # Prisma ORM client & Adapters setup
 │   ├── http/                    # Express Routers, Controllers, Middlewares
 │   ├── services/                # JWT Token Adapters, Bcrypt Password Hashing
-│   ├── container/               # Composition Root & DI Containers
+│   ├── container/               # Composition Root & DI Factories
 │   └── ... 
 ```
 
@@ -117,6 +117,16 @@ Ensure you have the following system dependencies installed:
 * **Git:** For version control.
 
 > 💡 **Windows Users:** If you don't use Docker Desktop, running the project inside **WSL2 (Ubuntu)** with Docker Engine installed directly in the Linux distribution works out of the box with Testcontainers.
+
+## 🛡️ CI/CD, Security & Quality Assurance
+
+Synergy employs a zero-trust CI/CD pipeline powered by GitHub Actions, Snyk, and Trivy:
+
+* **Quality Pipeline:** ESLint ➔ Strict TypeScript 6.0 ➔ 900+ Vitest Unit & Integration Tests (Testcontainers).
+* **Dependency & Code Security:** Automated SCA, SAST, and Secret Scanning via Snyk.
+* **Container Hardening:** Minimal `node:24-alpine` multi-stage Docker builds with zero `HIGH` or `CRITICAL` vulnerabilities verified by Trivy.
+
+For a deep dive into our pipeline architecture and container hardening strategies, see our [Architecture Documentation](./ARCHITECTURE.us.md#6-cicd-containerization--devsecops-pipeline).
 
 ### Installation & Setup
 

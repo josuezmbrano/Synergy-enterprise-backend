@@ -13,6 +13,7 @@ El sistema está construido bajo los más altos estándares de ingeniería de so
 - **Inversión de Dependencias (DIP):** La infraestructura y la aplicación dependen siempre de contratos e interfaces (Puertos) definidos en el núcleo del dominio. Ningún caso de uso conoce la implementación de la base de datos o de frameworks externos.
 - **Single Responsibility (SRP):** Cada archivo, middleware, caso de uso (`BaseUseCase`) y entidad (`BaseEntity`) tiene una única razón de cambio. Los repositorios persisten, los casos de uso orquestan y las entidades protegen invariantes.
 - **Encapsulamiento Estricto de Invariantes:** Las entidades y Value Objects dictan la verdad del sistema. Estados inválidos son matemáticamente imposibles de instanciar gracias al ocultamiento de constructores (Patrón Factory) y validaciones estrictas tipo Fail-Fast.
+- **Aislamiento del Ciclo de Vida de la App:** Eliminación completa de singletons globales mutables en runtime. La creación del servidor, la vinculación de la aplicación Express y la inyección de dependencias están aisladas mediante funciones factoría (createContainer(), createApp(), createServer()), eliminando la fuga de estado entre suites de prueba y builds multietapa.
 
 ### Stack Técnico Consolidado
 - **Runtime & Lenguaje:** Node.js (v24.x+), TypeScript 6.0 (Strict Mode).
@@ -55,7 +56,7 @@ La aplicación respeta el patrón de anillos concéntricos propuesto por Uncle B
                             │
 ┌───────────────────────────┴────────────────────────────┐
 │ 4. INFRASTRUCTURE LAYER (Adapters, Prisma, Mailer)     │
-│    PrismaTaskRepository, ResendMailService, di.config  │
+│    PrismaTaskRepository, ResendMailService, Factory DI │
 └────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -67,11 +68,12 @@ La aplicación respeta el patrón de anillos concéntricos propuesto por Uncle B
 - **Presentation:**
   - **Controllers & Routers:** Centralizan el enrutamiento HTTP (ej. `auth.routes.ts`, `task.routes.ts`). Los controladores (`CreateTaskController`, `LoginUserController`) reciben las peticiones, desempaquetan los payloads y despachan los Casos de Uso.
   - **Middlewares:** Operaciones transversales como autenticación (`CheckAuthMiddleware` con validación JWT) y validación estructural entrada/salida (`validateRequest` utilizando esquemas `ZodType`). El manejo unificado de errores se delega a `GlobalErrorMiddleware`.
+  - **Factorías:** createApp(container) vincula middlewares y rutas dinámicas utilizando el contenedor de dependencias aislado generado por createContainer().
 
 - **Application:**
   - **Casos de Uso:** Cumplen el contrato genérico `BaseUseCase<Input, Output>`. Actúan como orquestadores coreografiando repositorios y servicios de dominio. Ejemplos: `AcceptInvitationCase`, `CompleteProjectCase`.
   - **Puertos de Integración Externa:** Contratos abstractos como `IPasswordHasher`, `IAuthService`, `IMailService`, y repositorios `I[Entity]Repository`.
-  - **Inyección de Dependencias (DI):** Orquestada de forma manual y estáticamente segura mediante el patrón **Composition Root** (centralizado en `containerDI` dentro de `di.config.ts`), eliminando la necesidad de decoradores mágicos y mejorando los tiempos de cold-start en funciones lambda.
+  - **Inyección de Dependencias (DI):** Orquestada de forma estáticamente segura mediante factorías (createContainer() en di.config.ts), eliminando singletons globales mutables y decoradores mágicos, lo que optimiza los tiempos de cold-start y mejora el aislamiento en las pruebas.
 
 - **Domain (Core):**
   - Libre de frameworks externos (`0 dependencies`). Todo en esta capa son clases de Typescript nativas. Define la Lógica de Negocio y reglas de comportamiento mediante Agregados (`ProjectEntityClass`, `UserEntityClass`), Value Objects (`ProjectTitleVo`, `UserEmailVo`) y Excepciones de Dominio (ej. `ProjectErrorFactory`).
@@ -79,6 +81,7 @@ La aplicación respeta el patrón de anillos concéntricos propuesto por Uncle B
 - **Infrastructure:**
   - **Repositorios de Datos:** Clases como `PrismaUserRepository` y `PrismaTaskRepository` que implementan las interfaces de dominio (`IUserRepository`) utilizando la capa ORM. Aplican el Data Mapper Pattern para aislar el dominio de la persistencia.
   - **Adaptadores:** `ResendMailService`, `NodemailService`, `BcryptPasswordHasher`, `JwtAuth`.
+  - **Gestión de Entorno:** El cargador centralizado del entorno (load-env.ts) garantiza la carga determinista de variables de entorno antes de ejecutar la configuración en entornos locales o CI.
 
 ---
 
@@ -149,6 +152,7 @@ Validar que las Invariantes (Business Rules) no emitan falsos positivos, garanti
 ### Integration Testing (Infrastructure & Database)
 - Pruebas de extremo a extremo en la capa de persistencia validando consultas complejas, Unique Constraints relacionales y cascadas.
 - Orquestado completamente mediante **Testcontainers** (ver ADR-005 para más detalles).
+- Estado de ejecución aislado: Las factorías (createContainer()) instancian dependencias dedicadas para las instancias de prueba, eliminando la contaminación de estado o la interferencia entre tests.
 
 ---
 
@@ -186,7 +190,63 @@ El sistema implementa un esquema de observabilidad agnóstico y desacoplado del 
 
 ---
 
-## 6. ARCHITECTURAL DECISION RECORDS (ADRs)
+## 6. PIPELINE DE CI/CD, CONTENEDORIZACIÓN Y DEVSECOPS
+
+### Resumen General
+Synergy aplica un pipeline automatizado de Garantía de Calidad (QA) y Seguridad multietapa a través de **GitHub Actions**. Cada Pull Request y push a la rama `main` se somete a una validación automatizada, evitando que lleguen a producción regresiones, fugas de memoria, vulnerabilidades en la cadena de suministro o builds de contenedores mal configurados.
+
+### Flujo de Trabajo de Integración Continua (CI)
+El pipeline se estructura en 4 jobs aislados, secuenciales y paralelizados (`validate` ➔ `testing` ➔ `snyk` ➔ `docker`):
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 1. VALIDATE JOB                                                         │
+│    Lint ➔ Typecheck (TS 6.0) ➔ Prisma Client ➔ Build Monorepo          
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 2. TESTING JOB                                                          │
+│    Unit Tests (Vitest Mocks) ➔ Integration Tests (Testcontainers + PG) 
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 3. SNYK SECURITY JOB                                                    │
+│    SCA (Dependency Audit) ➔ SAST (Code Analysis) ➔ Snyk Dashboard Sync 
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 4. DOCKER & CONTAINER SECURITY JOB                                      │
+│    Multi-stage Build ➔ Alpine OS Hardening ➔ Trivy Vulnerability Scan   
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Etapas Detalladas del Pipeline
+
+* **Etapa de Validación (`validate`):**
+  * **Calidad de Código y Tipado:** Ejecuta ESLint y la comprobación estricta de tipos con TypeScript en todos los workspaces del monorepo (`@project/common`, `@project/server`).
+  * **Generación del Cliente ORM:** Sintetiza el cliente de Prisma (`pnpm run server:prisma-generate`) utilizando los adaptadores de controladores (*driver adapters*).
+
+* **Etapa de Pruebas Automatizadas (`testing`):**
+  * **Suite Unitaria:** Ejecuta las especificaciones unitarias del dominio y de los casos de uso en milisegundos mediante Vitest y `vitest-mock-extended`.
+  * **Suite de Integración:** Despliega contenedores reales de PostgreSQL a través de Testcontainers (`@testcontainers/postgresql`) para validar migraciones de base de datos, consultas SQL puras, restricciones (*constraints*) y transacciones ACID gestionadas por el `PrismaUnitOfWork`.
+
+* **Etapa de Análisis de Dependencias y Seguridad Estática (`snyk`):**
+  * **Análisis de Composición de Software (SCA):** Escanea el árbol de dependencias (`pnpm-lock.yaml`) en busca de vulnerabilidades conocidas (CVEs).
+  * **Pruebas de Seguridad de Aplicaciones Estáticas (SAST):** Escanea el código fuente mediante Snyk Code en busca de antipatrones de seguridad y filtrado de credenciales o secretos.
+  * **Sincronización con el Dashboard de Snyk:** Utiliza el indicador `--strict-out-of-sync=false` para reportar continuamente el estado de seguridad al dashboard de la organización `josuezmbrano` en Snyk y subir reportes SARIF a GitHub Code Scanning.
+
+* **Etapa de Construcción y Endurecimiento de Contenedores (`docker`):**
+  * **Dockerfile de Producción Multietapa:** Construye una imagen de producción optimizada utilizando `node:24-alpine` como entorno de ejecución (*runner*) base.
+  * **Endurecimiento del SO del Contenedor:** Ejecuta `apk upgrade --no-cache` para parchear librerías a nivel de sistema operativo (por ejemplo, corrección del DoS por QUIC en OpenSSL/`libssl3` `CVE-2026-14456`).
+  * **Eliminación de la Superficie de Ataque:** Remueve explícitamente `npm`, `npx` y binarios globales no utilizados de la imagen final del runner, neutralizando vulnerabilidades transitivas (`undici`, `node-tar`, `ip-address`).
+  * **Escaner de Imágenes Trivy:** Escanea la imagen final del contenedor en busca de vulnerabilidades `CRITICAL` y `HIGH` en el SO o en librerías, haciendo fallar el build (`exit-code 1`) si se detecta alguna amenaza sin parchear.
+
+---
+
+## 7. ARCHITECTURAL DECISION RECORDS (ADRs)
 
 ### ADR-001: Clean Architecture + DDD vs MVC Convencional
 - **Contexto:** Synergy requiere acomodar lógicas complejas y entrelazadas (Invitaciones que modifican Miembros, Proyectos que restringen Tareas) en un entorno donde múltiples equipos podrían intervenir. El MVC clásico tiende a generar "Controladores Engordados" o "Modelos Anémicos", acoplando el ORM a las reglas de negocio.
@@ -249,3 +309,9 @@ Además, los *integration tests* que utilizan contenedores dinámicos (*Testcont
 * **Decisión:** Utilizar `AsyncLocalStorage` de Node.js para mantener el contexto de la petición (`requestId`) de forma asíncrona e implícita. Inyectar `LoggerPort` mediante Inversión de Dependencias en los Casos de Uso que requieran resiliencia (ej. fallos en servicios de notificación que no deben abortar la transacción principal).
 * **Consecuencias Positivas:** Peticiones 100% trazables en entornos distribuidos; los Casos de Uso no conocen el framework de logging; refactorización limpia sin alterar firmas de métodos.
 * **Trade-offs:** Ligero sobrecosto de memoria por el contexto asíncrono, mitigado por el alto rendimiento nativo del API `async_hooks` en Node.js moderno.
+
+### ADR-011: Migración de Singletons Globales a Funciones Factoría para Inyección de Dependencias
+* **Contexto:** Los singletons globales a nivel de módulo para contenedores (containerDI), la aplicación Express (app) y clientes ORM causaban fugas de estado compartido entre ejecuciones de pruebas en Vitest. Además, la importación de singletons a nivel superior provocaba la evaluación prematura de variables de entorno antes de que Testcontainers o load-env.ts pudieran inyectar configuraciones dinámicas en runtime.
+* **Decisión:** Convertir todos los singletons globales de la aplicación en Funciones Factoría (createContainer(), createApp(), y createServer()).
+* **Consecuencias Positivas:** Aislamiento absoluto de estado entre contextos de ejecución de pruebas de integración. Garantiza la inicialización determinista de variables de entorno (load-env.ts) previa al binding de infraestructura. Previene fallos en las builds multietapa de Docker causados por intentos prematuros de conexión a la BD durante la fase de análisis estático.
+* **Trade-offs:** Los puntos de entrada del servidor deben invocar explícitamente los constructores factoría (createServer()) durante el arranque.

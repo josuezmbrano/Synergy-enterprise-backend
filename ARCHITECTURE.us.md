@@ -1,20 +1,26 @@
 ### 🇺🇸 English Version (`ARCHITECTURE.us.md`)
 
 # 🏢 Synergy Enterprise Backend — Project & Task Management API
+
 > 🇪🇸 **Español:** [Lee la versión en español de la arquitectura aquí](./docs/ARCHITECTURE.es.md)
 
 ## 1. EXECUTIVE SUMMARY & ARCHITECTURAL INTENT
 
 ### System Purpose
+
 Synergy is an enterprise-grade platform (Enterprise Project System) designed for the comprehensive management of projects, members, invitations, and tasks. Its architecture is consolidated as a **Decoupled Modular Monolith**, carefully structured for Serverless deployments (such as AWS Lambda or Edge Containers). This is achieved through a strict separation of concerns and leveraging modern edge computing capabilities, guaranteeing elastic scalability without exhausting the relational connection pool, while preserving domain isolation that facilitates a future split into microservices if load demands it.
 
 ### Core Principles
+
 The system is built under the highest software engineering standards:
+
 - **Dependency Inversion (DIP):** Infrastructure and application always depend on contracts and interfaces (Ports) defined in the domain core. No use case knows about the database implementation or external frameworks.
 - **Single Responsibility (SRP):** Every file, middleware, use case (`BaseUseCase`), and entity (`BaseEntity`) has a single reason to change. Repositories persist, use cases orchestrate, and entities protect invariants.
 - **Strict Invariant Encapsulation:** Entities and Value Objects dictate the system's truth. Invalid states are mathematically impossible to instantiate thanks to constructor hiding (Factory Pattern) and strict Fail-Fast validations.
+- **Isolated App Lifecycle:** Complete elimination of runtime global singletons. Server creation, Express application binding, and dependency injection are isolated via Factory Functions (createContainer(), createApp(), createServer()), eliminating state leakage during test suites and multi-stage builds.
 
 ### Consolidated Tech Stack
+
 - **Runtime & Language:** Node.js (v24.x+), TypeScript 6.0 (Strict Mode).
 - **Presentation:** Express.js v5.
 - **Data Validation (Boundary):** Zod (Unified and shared schemas via the `@project/common` workspace).
@@ -27,7 +33,7 @@ The system is built under the highest software engineering standards:
 
 ## 2. SYSTEM ARCHITECTURE & LAYER FLOW
 
-The application strictly adheres to the concentric rings pattern proposed by Uncle Bob (Clean Architecture). 
+The application strictly adheres to the concentric rings pattern proposed by Uncle Bob (Clean Architecture).
 
 ### Unidirectional Flow
 
@@ -55,7 +61,7 @@ The application strictly adheres to the concentric rings pattern proposed by Unc
                             │
 ┌───────────────────────────┴────────────────────────────┐
 │ 4. INFRASTRUCTURE LAYER (Adapters, Prisma, Mailer)     │
-│    PrismaTaskRepository, ResendMailService, di.config  │
+│    PrismaTaskRepository, ResendMailService, Factory DI │
 └────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -67,11 +73,12 @@ The application strictly adheres to the concentric rings pattern proposed by Unc
 - **Presentation:**
   - **Controllers & Routers:** Centralize HTTP routing (e.g., `auth.routes.ts`, `task.routes.ts`). Controllers (`CreateTaskController`, `LoginUserController`) receive requests, unpack payloads, and dispatch Use Cases.
   - **Middlewares:** Cross-cutting operations like authentication (`CheckAuthMiddleware` with JWT validation) and structural input/output validation (`validateRequest` using `ZodType` schemas). Unified error handling is delegated to `GlobalErrorMiddleware`.
+  - **Factories:** createApp(container) binds middlewares and dynamic routers using the isolated dependency container created by createContainer().
 
 - **Application:**
   - **Use Cases:** Fulfill the generic `BaseUseCase<Input, Output>` contract. They act as orchestrators choreographing repositories and domain services. Examples: `AcceptInvitationCase`, `CompleteProjectCase`.
   - **External Integration Ports:** Abstract contracts like `IPasswordHasher`, `IAuthService`, `IMailService`, and `I[Entity]Repository` repositories.
-  - **Dependency Injection (DI):** Manually and statically type-safe orchestrated via the **Composition Root** pattern (centralized in `containerDI` within `di.config.ts`), eliminating the need for magic decorators and improving cold-start times in lambda functions.
+  - **Dependency Injection (DI):** Factory-based statically type-safe composition via createContainer() (in di.config.ts), eliminating top-level mutable singletons, magic decorators, and improving test isolation and cold-start times.
 
 - **Domain (Core):**
   - Free of external frameworks (`0 dependencies`). Everything in this layer are native TypeScript classes. Defines Business Logic and behavioral rules through Aggregates (`ProjectEntityClass`, `UserEntityClass`), Value Objects (`ProjectTitleVo`, `UserEmailVo`), and Domain Exceptions (e.g., `ProjectErrorFactory`).
@@ -79,56 +86,67 @@ The application strictly adheres to the concentric rings pattern proposed by Unc
 - **Infrastructure:**
   - **Data Repositories:** Classes like `PrismaUserRepository` and `PrismaTaskRepository` that implement domain interfaces (`IUserRepository`) using the ORM layer. They apply the Data Mapper Pattern to isolate the domain from persistence.
   - **Adapters:** `ResendMailService`, `NodemailService`, `BcryptPasswordHasher`, `JwtAuth`.
+  - **Environment Management:** Centralized environment loader (load-env.ts) guarantees deterministic lifecycle loading of process environment variables prior to setup execution in local and CI runner environments.
 
 ---
 
 ## 3. DOMAIN-DRIVEN DESIGN (DDD) STRATEGY & CORE PATTERNS
 
 ### BaseValueObject, Identifiers & Structural Typing Prevention
-To eradicate *Primitive Obsession* and prevent collisions due to TypeScript's *Structural Typing* (where two classes with the same structure are evaluated as equivalent even if they represent different concepts), discriminating type literals are used (`voType` and `identifierType`).
+
+To eradicate _Primitive Obsession_ and prevent collisions due to TypeScript's _Structural Typing_ (where two classes with the same structure are evaluated as equivalent even if they represent different concepts), discriminating type literals are used (`voType` and `identifierType`).
 
 ```typescript
 // 1. Base for attribute Value Objects (e.g., Emails, Passwords, Titles)
 export abstract class BaseValueObject<T, V extends string> {
-    protected abstract readonly voType: V; // Discriminator (e.g., 'UserEmailVo')
-    protected readonly _props: DeepReadonly<T>;
-    
-    protected constructor(props: T) {
-        this._props = deepFreeze(props); // Guaranteed immutability
-    }
-    // ... deep equals() methods
+  protected abstract readonly voType: V; // Discriminator (e.g., 'UserEmailVo')
+  protected readonly _props: DeepReadonly<T>;
+
+  protected constructor(props: T) {
+    this._props = deepFreeze(props); // Guaranteed immutability
+  }
+  // ... deep equals() methods
 }
 
 // 2. Base for Unique Identifiers (UUIDs)
-export abstract class UniqueIdentifier<ID extends string> extends BaseIdentifier<string, ID> {
-    protected abstract readonly identifierType: ID; // Discriminator (e.g., 'ProjectIdVo')
-    
-    protected constructor(uuid: string) {
-        UniqueIdentifier.validate(uuid); // Validates UUIDv4 format
-        super(uuid);
-    }
+export abstract class UniqueIdentifier<
+  ID extends string,
+> extends BaseIdentifier<string, ID> {
+  protected abstract readonly identifierType: ID; // Discriminator (e.g., 'ProjectIdVo')
+
+  protected constructor(uuid: string) {
+    UniqueIdentifier.validate(uuid); // Validates UUIDv4 format
+    super(uuid);
+  }
 }
 ```
-* **Recursive `deepFreeze`:** Custom implementation (`src/core/utils/deepFreeze.ts`) employing a `WeakSet` to detect and ignore circular references, guaranteeing memory leak prevention. Explicitly excludes native instances like `Date` or `RegExp` to avoid freezing their prototypes, ultimately applying a deep `Object.freeze()`.
-* **`DeepReadonly<T>`:** Native TS conditional type to recursively iterate the inferred object, ensuring strict immutability at compile time for any `T` received by a Value Object.
-* **Strong vs. General Typing:** Identifiers extend from `UniqueIdentifier<ID>` (with a specific `identifierType`, e.g., `'UserIdVo'`), while attribute values are identified with `voType`. This prevents a `MemberIdVo` from mistakenly being passed where a `ProjectIdVo` is expected due to classic TypeScript Structural Typing.
+
+- **Recursive `deepFreeze`:** Custom implementation (`src/core/utils/deepFreeze.ts`) employing a `WeakSet` to detect and ignore circular references, guaranteeing memory leak prevention. Explicitly excludes native instances like `Date` or `RegExp` to avoid freezing their prototypes, ultimately applying a deep `Object.freeze()`.
+- **`DeepReadonly<T>`:** Native TS conditional type to recursively iterate the inferred object, ensuring strict immutability at compile time for any `T` received by a Value Object.
+- **Strong vs. General Typing:** Identifiers extend from `UniqueIdentifier<ID>` (with a specific `identifierType`, e.g., `'UserIdVo'`), while attribute values are identified with `voType`. This prevents a `MemberIdVo` from mistakenly being passed where a `ProjectIdVo` is expected due to classic TypeScript Structural Typing.
 
 ### Entities & Aggregates
+
 Entities derive from `BaseEntity<I, T>`, encapsulating state with protected properties `_props`, `_id`, `createdAt`, and `updatedAt`.
-- **Private Constructors (Factory Pattern):** Entities like `UserEntityClass` or `TaskEntityClass` cannot be instantiated with the `new` keyword from the outside. 
-- **`.create()` vs `.reconstitute()`:** 
-  - `.create()` is used to model *new* business interactions (e.g., from a Controller). It generates UUIDs, assigns default timestamps (`DateVo.create()`), and evaluates initial invariants.
+
+- **Private Constructors (Factory Pattern):** Entities like `UserEntityClass` or `TaskEntityClass` cannot be instantiated with the `new` keyword from the outside.
+- **`.create()` vs `.reconstitute()`:**
+  - `.create()` is used to model _new_ business interactions (e.g., from a Controller). It generates UUIDs, assigns default timestamps (`DateVo.create()`), and evaluates initial invariants.
   - `.reconstitute()` is exclusively used for the Infrastructure layer (**Mappers**, e.g., `ProjectMapper.toDomain()`). It hydrates entities retrieved from the database preserving their exact historical IDs and Timestamps intact.
 - **Audited Mutability:** Aggregate state is only altered through behavioral methods (e.g., `moveToInProgress()`, `extendDueDate()`), which internally invoke `this.markAsUpdated()`, cryptographically registering the temporal modification of the aggregate.
 
 ### Transactional Persistence Pattern (UOW + ALS + Repositories)
+
 The problem of leaking the database access layer into use cases has been mitigated using Node.js **AsyncLocalStorage (ALS)** and the Unit of Work pattern.
+
 - **`TransactionStorage<T>` (ALS):** A singleton of `AsyncLocalStorage` (`txStorage` in `tx-storage.ts`) is declared. It keeps the transactional client context alive during the async thread lifespan.
 - **`PrismaUnitOfWork`:** Implements the `IBaseUnitOfWork` port. Opens a transaction with `prisma.$transaction` and injects the transactional `tx` handler into the asynchronous pipeline using `txStorage.run(tx, work)`.
 - **`BasePrismaRepository`:** All concrete repositories invoke `this.getClient()`. This method dynamically resolves `txStorage.getStore() ?? this.prisma`. If a Use Case (like `AcceptInvitationCase`) initiates the Unit Of Work, all reads and writes detect and automatically use the underlying transactional client. This completely avoids injecting Prisma Client or Transactions at the Application level.
 
 ### Domain Error Handling
+
 A robust error architecture to prevent leaking internal stack traces to clients:
+
 - **`BaseDomainError`:** Models a controlled exception with its own state (`errorType`, `internalCode`, `isOperational = true`).
 - **Error Factories (E.g., `UserErrorFactory`):** Centralize the domain failure glossary. They trigger errors ensuring consistency with human-readable and internal tracking codes.
 - **StackTrace Profiling:** Implementation of `Error.captureStackTrace(this, this.constructor)` isolating the exact origin of the failure without polluting the log with the generic instantiation.
@@ -141,16 +159,20 @@ A robust error architecture to prevent leaking internal stack traces to clients:
 The Quality Assurance (QA) strategy is aggressive and covers the entirety of transactional and domain logic, separated into specific suites in Vitest (`vitest.config.ts` vs `vitest.integration.config.ts`).
 
 ### Testing Philosophy
+
 Validate that Invariants (Business Rules) do not emit false positives, ensuring that the DDD design restricts impossible state transitions (e.g., Completing a project that has pending tasks) by using exhaustive "Happy Paths" combined with "Guard & Authorization Constraints" in every specification.
 
 ### Unit Testing (Domain & Application)
+
 - Ultra-fast isolated tests using **Vitest**.
 - **Mocks & Stubs:** Use of `vitest-mock-extended` (e.g., `mock<IUserRepository>()`) to instantiate repositories and external services without real DB persistence.
 - **Object Mother Pattern** (`UserMother`, `ProjectMother`): Centralizes the creation of complex aggregates in specific states (e.g., `reconstituteArchived()`, `createSuspended()`), eliminating boilerplate code in assertions.
 
 ### Integration Testing (Infrastructure & Database)
+
 - End-to-end testing in the persistence layer validating complex queries, relational Unique Constraints, and cascades.
 - Fully orchestrated via **Testcontainers** (see ADR-005 for more details).
+- Isolated state execution: Factories (createContainer()) instantiate dedicated dependencies for test instances, eliminating state pollution or cross-test interference.
 - Tests strictly validate ACID transactional rollbacks (due to locking or failure) by forcing exceptions at the `UnitOfWork` level.
 
 ---
@@ -162,6 +184,7 @@ Validate that Invariants (Business Rules) do not emit false positives, ensuring 
 The server implements an orchestrator-agnostic graceful shutdown mechanism designed for cloud-native deployment environments (e.g., Docker, Kubernetes, Render).
 
 #### Controlled Shutdown Workflow
+
 Upon receiving operating system termination signals (`SIGINT` from terminal or `SIGTERM` from container orchestrators):
 
 1. **Signal Interception:** `registerGracefulShutdown` guards against redundant execution if duplicate signals are received.
@@ -173,23 +196,82 @@ Upon receiving operating system termination signals (`SIGINT` from terminal or `
 > **Infrastructure Note:** The Node.js server operates over plain HTTP to leverage TLS Termination at the Reverse Proxy or Load Balancer level (e.g., Nginx, Cloudflare, AWS ALB).
 
 ### Observability and Request Traceability
+
 The system implements an agnostic observability design decoupled from the underlying logging framework via the Adapter Pattern.
 
 #### Key Components:
 
-* **`LoggerPort` (Application Layer):** Contract defining standard logging methods (`info`, `warn`, `error`, `debug`, `child`). The application layer and use cases depend strictly on this abstraction.
-* **`PinoLoggerAdapter` (Infrastructure Layer):** Concrete implementation adapting the `Pino` library to the `LoggerPort` contract. Handles serialization of `Error` instances under the `err` key and formats JSON structured outputs.
-* **`requestContext` (AsyncLocalStorage):** Node.js asynchronous execution context store. Allows implicit propagation of request metadata—such as the `requestId` generated at the HTTP layer—across all application layers without polluting method signatures.
+- **`LoggerPort` (Application Layer):** Contract defining standard logging methods (`info`, `warn`, `error`, `debug`, `child`). The application layer and use cases depend strictly on this abstraction.
+- **`PinoLoggerAdapter` (Infrastructure Layer):** Concrete implementation adapting the `Pino` library to the `LoggerPort` contract. Handles serialization of `Error` instances under the `err` key and formats JSON structured outputs.
+- **`requestContext` (AsyncLocalStorage):** Node.js asynchronous execution context store. Allows implicit propagation of request metadata—such as the `requestId` generated at the HTTP layer—across all application layers without polluting method signatures.
 
 #### Logger Behavior:
 
-* **Development:** Logs are formatted using pino-pretty for terminal readability (local timestamps, color highlights, and context blocks).
-* **Production:** High-performance structured JSON output, optimized for log aggregators like Datadog, Grafana Loki, or CloudWatch.
-* **Testing:** Muted automatically (silent) to maintain a clean Vitest output.
+- **Development:** Logs are formatted using pino-pretty for terminal readability (local timestamps, color highlights, and context blocks).
+- **Production:** High-performance structured JSON output, optimized for log aggregators like Datadog, Grafana Loki, or CloudWatch.
+- **Testing:** Muted automatically (silent) to maintain a clean Vitest output.
 
 ---
 
-## 6. ARCHITECTURAL DECISION RECORDS (ADRs)
+## 6. CI/CD, CONTAINERIZATION & DEVSECOPS PIPELINE
+
+### Overview
+
+Synergy enforces an automated, multi-stage Quality Assurance and Security pipeline via **GitHub Actions**. Every Pull Request and push to the `main` branch undergoes automated validation, preventing regressions, memory leaks, supply-chain vulnerabilities, and misconfigured container builds from entering production.
+
+### Continuous Integration Workflow
+
+The pipeline is structured into 4 isolated, sequential, and parallelized jobs (`validate` ➔ `testing` ➔ `snyk` ➔ `docker`):
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 1. VALIDATE JOB                                                         │
+│    Lint ➔ Typecheck (TS 6.0) ➔ Prisma Client ➔ Build Monorepo         
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 2. TESTING JOB                                                          │
+│    Unit Tests (Vitest Mocks) ➔ Integration Tests (Testcontainers + PG) 
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 3. SNYK SECURITY JOB                                                    │
+│    SCA (Dependency Audit) ➔ SAST (Code Analysis) ➔ Snyk Dashboard Sync 
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 4. DOCKER & CONTAINER SECURITY JOB                                      │
+│    Multi-stage Build ➔ Alpine OS Hardening ➔ Trivy Vulnerability Scan   
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Detailed Pipeline Stages
+
+* **Validation Stage (`validate`):**
+  * **Code Quality & Typing:** Runs ESLint and strict TypeScript typechecking across all monorepo workspaces (`@project/common`, `@project/server`).
+  * **ORM Client Generation:** Synthesizes the Prisma Client (`pnpm run server:prisma-generate`) using driver adapters.
+
+* **Automated Testing Stage (`testing`):**
+  * **Unit Suite:** Executes domain and use case unit specifications in milliseconds using Vitest and `vitest-mock-extended`.
+  * **Integration Suite:** Spins up real PostgreSQL containers via Testcontainers (`@testcontainers/postgresql`) to validate database migrations, raw queries, constraints, and ACID transactions managed by the `PrismaUnitOfWork`.
+
+* **Dependency & Static Security Analysis Stage (`snyk`):**
+  * **Software Composition Analysis (SCA):** Scans the dependency tree (`pnpm-lock.yaml`) for known CVEs.
+  * **Static Application Security Testing (SAST):** Scans source code for security anti-patterns and secrets leaks using Snyk Code.
+  * **Snyk Dashboard Synchronization:** Uses `--strict-out-of-sync=false` to continuously report the security state to the `josuezmbrano` Snyk organization dashboard and upload SARIF reports to GitHub Code Scanning.
+
+* **Container Building & Hardening Stage (`docker`):**
+  * **Multi-stage Production Dockerfile:** Builds an optimized production image using `node:24-alpine` as the base runner.
+  * **Container OS Hardening:** Executes `apk upgrade --no-cache` to patch system-level libraries (e.g., OpenSSL/`libssl3` `CVE-2026-14456` QUIC DoS fix).
+  * **Attack Surface Elimination:** Explicitly strips `npm`, `npx`, and unused global binaries from the final runner image, neutralizing transitive vulnerabilities (`undici`, `node-tar`, `ip-address`).
+  * **Trivy Image Scanner:** Scans the final container image for `CRITICAL` and `HIGH` OS or library vulnerabilities, failing the build (`exit-code 1`) if any unpatched threat is detected.
+
+---
+
+## 7. ARCHITECTURAL DECISION RECORDS (ADRs)
 
 ### ADR-001: Clean Architecture + DDD vs Conventional MVC
 - **Context:** Synergy needs to accommodate complex and intertwined logics (Invitations modifying Members, Projects restricting Tasks) in an environment where multiple teams could intervene simultaneously, without risk of cross-corruption. Classic MVC tends to generate "Fat Controllers" or "Anemic Models", coupling the ORM to business rules.
@@ -251,3 +333,10 @@ Additionally, integration tests using dynamic containers (Testcontainers) inject
 * **Decision:** Use Node.js `AsyncLocalStorage` to maintain request context (`requestId`) implicitly and asynchronously. Inject `LoggerPort` via Dependency Inversion into Use Cases requiring resilience (e.g., non-critical notification failures that must not roll back main business transactions).
 * **Positive Consequences:** 100% traceable requests in distributed environments; Use Cases remain ignorant of the underlying logger library; clean refactoring without modifying method signatures.
 * **Trade-offs** Slight memory overhead from async context tracking, mitigated by the high native performance of the `async_hooks` API in modern Node.js.
+
+### ADR-011: Migration from Global Singletons to Dependency Injection Factory Functions
+* **Context:** Top-level global singletons for containers (containerDI), Express apps (app), and ORM clients caused shared state leakages between test runs in Vitest. Furthermore, importing top-level singletons triggered premature environment variable evaluations before Testcontainers or load-env.ts could inject dynamic runtime configurations.
+* **Decision:** Convert all top-level application singletons into Factory Functions (createContainer(), createApp(), and createServer()).
+* **Positive Consequences:** Absolute state isolation between integration test execution contexts. Guarantees deterministic environment variable initialization (load-env.ts) prior to infrastructure binding. Prevents multi-stage Docker build failures caused by premature DB connection attempts during static analysis steps.
+* **Trade-offs** Server entrypoints must explicitly invoke factory constructors (createServer()) during boot.
+```
