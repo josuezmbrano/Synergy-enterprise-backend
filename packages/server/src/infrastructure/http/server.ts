@@ -2,10 +2,13 @@ import { registerGracefulShutdown } from "infrastructure/lib/shutdown-handler.js
 import { getEnv } from "infrastructure/config/env.config.js"
 import { createContainer } from "infrastructure/container/di.config.js"
 import { createApp } from "./app.js"
+import { loadProductionSecrets } from "infrastructure/config/load.secrets.js"
 
 
 
-const startServer = () => {
+const startServer = async () => {
+
+    await loadProductionSecrets()
 
     const env = getEnv()
     const container = createContainer(env)
