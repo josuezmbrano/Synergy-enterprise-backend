@@ -23,10 +23,15 @@ RUN pnpm --filter @project/server deploy --legacy --prod /prod/server
 
 FROM node:24.17-alpine AS runner
 
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.1 /lambda-adapter /opt/extensions/lambda-adapter
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+ENV AWS_LWA_READINESS_CHECK_PATH=/health/readiness
+ENV AWS_LWA_READINESS_CHECK_PORT=3000
 
 RUN apk upgrade --no-cache && \ 
     addgroup --system --gid 1001 nodejs && \
