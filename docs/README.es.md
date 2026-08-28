@@ -10,7 +10,7 @@
 [![pnpm](https://img.shields.io/badge/pnpm-v10.21.0-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Vitest](https://img.shields.io/badge/Vitest-v4.1.5-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
-Una API RESTful de grado de producción construida con **TypeScript**, **Node.js** y **Express**, adhiriéndose estrictamente a los principios de **Clean Architecture** y **Domain-Driven Design (DDD)**. Diseñada con type-safety extremo, Inyección de Dependencias manual (Composition Root), patrón transaccional Unit of Work y pruebas de integración exhaustivas.
+Una API RESTful de grado de producción construida con **TypeScript**, **Node.js** y **Express**, adhiriéndose estrictamente a los principios de **Clean Architecture** y **Domain-Driven Design (DDD)**. Diseñada con type-safety extremo, Inyección de Dependencias desacoplada mediante factorías (createContainer()), patrón transaccional Unit of Work y pruebas de integración exhaustivas.
 
 > 📖 **Documentación Profunda:** Para un análisis detallado de las decisiones arquitectónicas, prevención de tipado estructural y ADRs (Architectural Decision Records), por favor revisa el archivo [ARCHITECTURE.es.md](./ARCHITECTURE.es.md).
 
@@ -21,7 +21,7 @@ El sistema respeta estrictamente los límites concéntricos de **Clean Architect
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           INFRASTRUCTURE LAYER                              │
-│  [Express Routers]   [Prisma ORM]   [Mailpit / Resend]   [DI Containers]    │
+│  [Express Routers]   [Prisma ORM]   [Mailpit / Resend]   [DI Factories]     │
 │                                                                             │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │                         APPLICATION LAYER                           │   │
@@ -45,7 +45,7 @@ El sistema respeta estrictamente los límites concéntricos de **Clean Architect
 ## 🚀 Patrones de Diseño Clave y Puntos Fuertes
 
 * **Domain-Driven Design e Inmutabilidad Profunda:** Modelos de dominio ricos y encapsulados usando clases `BaseValueObject` fortificadas con inmutabilidad recursiva (`deepFreeze`) y literales discriminantes (`voType`, `identifierType`) para evitar colisiones por el *Structural Typing* de TypeScript.
-* **Inyección de Dependencias Manual (Composition Root):** Contenedor IoC estático personalizado (`di.config.ts`), evitando la magia de frameworks pesados, decoradores o sobrecarga por reflexión (optimizando tiempos de *cold start* en Serverless).
+* **Inyección de Dependencias Desacoplada:** (Composition Root via Factories): Eliminación completa de singletons globales mutables. Las dependencias e instancias de la aplicación se crean dinámicamente mediante funciones factoría (createContainer(), createApp(), createServer()), optimizando los tiempos de cold-start en entornos Serverless y aislando el estado entre pruebas.
 * **Unit of Work & Transacciones:** Manejo implícito de transacciones ACID respaldado por `AsyncLocalStorage` (`tx-storage`) de Node.js, logrando operaciones de base de datos seguras sin filtrar Prisma en el Dominio.
 * **Validación de Frontera en Monorepo (Fail-Fast):** Las cargas útiles (payloads) son sanitizadas y validadas a través de **Zod** compartiendo esquemas desde el workspace `@project/common`, aplicando seguridad perimetral antes de llegar a los controladores.
 * **Prisma Driver Adapters (v7):** Configurado para usar dinámicamente `@prisma/adapter-neon` (WebSockets) en entornos de producción/desarrollo, y TCP nativo (`@prisma/adapter-pg`) para pruebas de integración con Testcontainers.
@@ -84,7 +84,7 @@ src/
 │   ├── lib/                     # Configuración cliente ORM (Prisma Adapters)
 │   ├── http/                    # Express Routers, Controladores, Middlewares
 │   ├── services/                # JWT Token Adapters, Hasher (Bcrypt)
-│   ├── container/               # Composition Root & Contenedores DI
+│   ├── container/               # Composition Root & Factorías DI
 │   └── ... 
 ```
 
@@ -104,6 +104,16 @@ La capa de persistencia adapta dinámicamente su adaptador de conexión según e
 | :--- | :--- | :--- | :--- |
 | `/health/liveness` | `GET` | Ninguna | Retorna tiempo de actividad del proceso y métricas de memoria (`rssMB`, `heapUsedMB`, `heapTotalMB`). |
 | `/health/readiness` | `GET` | Ninguna | Valida conectividad activa a la base de datos vía `DatabasePinger` (`SELECT 1`). Retorna `200 OK` o `503 Service Unavailable`. |
+
+## 🛡️ CI/CD, Seguridad y Garantía de Calidad
+
+Synergy aplica un pipeline de CI/CD bajo la filosofía *Zero-Trust* impulsado por GitHub Actions, Snyk y Trivy:
+
+* **Pipeline de Calidad:** ESLint ➔ TypeScript 6.0 estricto ➔ +900 Pruebas Unitarias e Integración con Vitest (Testcontainers).
+* **Seguridad de Código y Dependencias:** SCA, SAST y escaneo de secretos (*Secret Scanning*) automatizados vía Snyk.
+* **Endurecimiento de Contenedores:** Builds multietapa en Docker con `node:24-alpine` optimizado y cero vulnerabilidades `HIGH` o `CRITICAL` verificadas por Trivy.
+
+Para un análisis detallado sobre la arquitectura de nuestro pipeline y las estrategias de endurecimiento de contenedores, consulta nuestra [Documentación de Arquitectura](./ARCHITECTURE.es.md#6-pipeline-de-cicd-contenedorizacion-y-devsecops).
 
 ## ⚙️ Primeros Pasos
 
