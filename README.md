@@ -105,6 +105,16 @@ The persistence layer dynamically adapts its connection adapter based on the act
 | `/health/liveness` | `GET` | None | Returns process uptime and memory metrics (`rssMB`, `heapUsedMB`, `heapTotalMB`). |
 | `/health/readiness` | `GET` | None | Validates active database connectivity via `DatabasePinger` (`SELECT 1`). Returns `200 OK` or `503 Service Unavailable`. |
 
+## 🛡️ CI/CD, Security & Quality Assurance
+
+Synergy employs a zero-trust CI/CD pipeline powered by GitHub Actions, Snyk, and Trivy:
+
+* **Quality Pipeline:** ESLint ➔ Strict TypeScript 6.0 ➔ 900+ Vitest Unit & Integration Tests (Testcontainers).
+* **Dependency & Code Security:** Automated SCA, SAST, and Secret Scanning via Snyk.
+* **Container Hardening:** Minimal `node:24-alpine` multi-stage Docker builds with zero `HIGH` or `CRITICAL` vulnerabilities verified by Trivy.
+
+For a deep dive into our pipeline architecture and container hardening strategies, see our [Architecture Documentation](./ARCHITECTURE.us.md#6-cicd-containerization--devsecops-pipeline).
+
 ## ⚙️ Getting Started
 
 ### 📋 Prerequisites
@@ -117,16 +127,6 @@ Ensure you have the following system dependencies installed:
 * **Git:** For version control.
 
 > 💡 **Windows Users:** If you don't use Docker Desktop, running the project inside **WSL2 (Ubuntu)** with Docker Engine installed directly in the Linux distribution works out of the box with Testcontainers.
-
-## 🛡️ CI/CD, Security & Quality Assurance
-
-Synergy employs a zero-trust CI/CD pipeline powered by GitHub Actions, Snyk, and Trivy:
-
-* **Quality Pipeline:** ESLint ➔ Strict TypeScript 6.0 ➔ 900+ Vitest Unit & Integration Tests (Testcontainers).
-* **Dependency & Code Security:** Automated SCA, SAST, and Secret Scanning via Snyk.
-* **Container Hardening:** Minimal `node:24-alpine` multi-stage Docker builds with zero `HIGH` or `CRITICAL` vulnerabilities verified by Trivy.
-
-For a deep dive into our pipeline architecture and container hardening strategies, see our [Architecture Documentation](./ARCHITECTURE.us.md#6-cicd-containerization--devsecops-pipeline).
 
 ### Installation & Setup
 
