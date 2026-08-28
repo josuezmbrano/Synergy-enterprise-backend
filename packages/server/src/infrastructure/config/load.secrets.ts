@@ -30,7 +30,7 @@ export const loadProductionSecrets = async (): Promise<void> => {
         }
 
     } catch (error) {
-        console.error('Failed to load secrets from AWS Secrets Manager:', error);
+        console.error('Failed to load secrets from AWS Secrets Manager.');
         throw error;
     }
 }
