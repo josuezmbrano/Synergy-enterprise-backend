@@ -42,7 +42,7 @@ beforeAll(async () => {
         pinoLogger.error(error, '❌ [Integration Setup] Failed to push Prisma schema')
         throw error;
     }
-})
+}, 30000)
 
 
 afterAll(async () => {
