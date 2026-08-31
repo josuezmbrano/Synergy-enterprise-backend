@@ -34,7 +34,7 @@ export class SynergyIamConstruct extends Construct {
 
         // SECRET REFERENCE CREATION
         const importedSecrets = secretsmanager.Secret.fromSecretPartialArn(
-            this, 'ImportedProdSecrets', prodSecretArn
+            this, 'ImportedProdSecrets', `${prodSecretArn}-??????`
         )
 
         // READ ONLY PERMISSION ASSIGMENT TO LAMBDA ROLE

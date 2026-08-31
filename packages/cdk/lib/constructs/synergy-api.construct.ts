@@ -38,8 +38,7 @@ export class SynergyApiConstruct extends Construct {
             environment: {
                 NODE_ENV: 'production',
                 PORT: '3000',
-                AWS_SECRET_NAME: props.secretName ?? 'prod/synergy/backend-secrets',
-                AWS_LAMBDA_EXEC_WRAPPER: '/opt/bootstrap',
+                AWS_SECRET_NAME: props.secretName ?? 'prod/synergy/backend-secrets'
             },
             timeout: cdk.Duration.seconds(30),
             memorySize: 1536,
