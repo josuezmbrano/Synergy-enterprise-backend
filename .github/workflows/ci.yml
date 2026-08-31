@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+
 jobs:
   validate:
     name: Lint, Typecheck & Build
@@ -109,7 +114,7 @@ jobs:
   docker:
     name: Docker Build, Verify & Container Security Scan
     needs: snyk
-    permissions: 
+    permissions:
       security-events: write
     runs-on: ubuntu-latest
 
@@ -155,3 +160,37 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "trivy-results.sarif"
+
+  deploy:
+    name: Deploy CDK Stack to AWS
+    needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node JS
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS Credentials through OIDC
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: Build monorepo packages
+        run: pnpm run build:all
+      
+      - name: CDK Synth & Deploy (Builds Docker image & updates AWS)
+        run: pnpm --filter cdk deploy --require-approval never
