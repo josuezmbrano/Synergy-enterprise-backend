@@ -196,4 +196,4 @@ jobs:
         run: pnpm run build:all
       
       - name: CDK Synth & Deploy (Builds Docker image & updates AWS)
-        run: pnpm --filter cdk deploy --require-approval never
+        run: pnpm --filter cdk exec cdk deploy --require-approval never
