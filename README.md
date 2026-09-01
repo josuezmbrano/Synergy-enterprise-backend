@@ -51,15 +51,19 @@ The system strictly adheres to the **Clean Architecture** concentric layer bound
 * **Prisma Driver Adapters (v7):** Configured to dynamically use `@prisma/adapter-neon` (WebSockets) for Serverless environments, and native TCP (`@prisma/adapter-pg`) for isolated integration tests running against ephemeral Docker containers via Testcontainers.
 * **Centralized Error Flow:** Custom `BaseDomainError` pipeline connected to a unified `GlobalErrorMiddleware` for predictable HTTP status mapping and structured JSON output.
 * **Graceful Shutdown & Process Lifecycle:** `SIGTERM`/`SIGINT` signal handling featuring HTTP traffic draining, clean PostgreSQL connection teardown via Prisma, inversion-of-control cleanup callbacks, and a 10s fallback safety timeout.
+* **Serverless Deployment & IaC (AWS CDK)**: Containerized deployment to AWS Lambda using the AWS Lambda Web Adapter (LWA) behind API Gateway, fully defined as Infrastructure as Code (IaC) with AWS CDK adhering to strict IAM Least Privilege.
+* **Passwordless CI/CD Authentication (OIDC)**: Automated deployment workflows utilizing OpenID Connect (OIDC) identity federation with AWS IAM, eliminating long-lived static cloud credentials in GitHub Secrets.
 
 ---
 
 ## 🛠️ Tech Stack & Tooling
 
 * **Environment & Language:** Node.js (v24.x+), TypeScript 6.0 (Strict), Pnpm Workspaces.
-* **HTTP Framework:** Express.js v5, Cors, Cookie Parser, Helmet.
-* **DB & Persistence:** Prisma ORM v7, PostgreSQL, Neon Serverless Driver.
-* **Security & Auth:** JSON Web Tokens (JWT), Bcrypt, Express XSS Sanitizer.
+* **HTTP Framework & Serverless:** Express.js v5, AWS Lambda Web Adapter (LWA), AWS API Gateway (HTTP/REST API).
+* **Infrastructure as Code (IaC):** AWS CDK (TypeScript Stack).
+* **DB & Persistence:** Prisma ORM v7, PostgreSQL, Neon Serverless Driver (`@prisma/adapter-neon`).
+* **Security & Auth:** JSON Web Tokens (JWT), Bcrypt, Express XSS Sanitizer, AWS IAM OIDC Federation.
+* **Secrets Management:** AWS Secrets Manager / SSM Parameter Store.
 * **Mailing & Comms:** Resend (Prod), Nodemailer + Mailpit API (Dev/Testing).
 * **Testing:** Vitest, Testcontainers (PostgreSQL & Mailpit), `vitest-mock-extended`.
 
@@ -90,13 +94,11 @@ src/
 
 ## 🗄️ Database Connection Strategy
 
-The persistence layer dynamically adapts its connection adapter based on the active runtime environment using **Prisma Driver Adapters**:
+The persistence layer dynamically adapts its connection strategy based on the active runtime environment using **Prisma Driver Adapters**:
 
-* **Development & Production (`Neon Serverless`):** Uses WebSocket pooling via `@prisma/adapter-neon` for serverless scalability and efficient connection pooling.
-  ```env
-  DATABASE_URL="postgres://user:password@ep-sample-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"
-  ```  
-* **Integration Testing (`Testcontainers + PrismaPg`):** Automatically switches to native TCP via `@prisma/adapter-pg` to communicate directly with isolated, ephemeral PostgreSQL Docker containers created per test suite.
+* **Development & Serverless Runtime (`Neon Serverless`):** Uses WebSocket pooling via `@prisma/adapter-neon` (PgBouncer) for elastic scalability and efficient connection lifecycle management in AWS Lambda.
+* **Schema Migrations DDL (`Direct Connection`):** Employs a dedicated direct PostgreSQL connection URL for CI/CD pipelines (`prisma migrate deploy`) to execute transactional schema alterations bypassing proxy pooler limitations.
+* **Integration Testing (`Testcontainers + PrismaPg`):** Automatically switches to native TCP via `@prisma/adapter-pg` to communicate directly with isolated, ephemeral PostgreSQL Docker containers per test suite execution.
 
 ## 🩺 Infrastructure & Health Checks
 
@@ -107,11 +109,12 @@ The persistence layer dynamically adapts its connection adapter based on the act
 
 ## 🛡️ CI/CD, Security & Quality Assurance
 
-Synergy employs a zero-trust CI/CD pipeline powered by GitHub Actions, Snyk, and Trivy:
+Synergy employs a zero-trust CI/CD pipeline powered by GitHub Actions, Snyk, Trivy, and AWS OIDC:
 
 * **Quality Pipeline:** ESLint ➔ Strict TypeScript 6.0 ➔ 900+ Vitest Unit & Integration Tests (Testcontainers).
 * **Dependency & Code Security:** Automated SCA, SAST, and Secret Scanning via Snyk.
 * **Container Hardening:** Minimal `node:24-alpine` multi-stage Docker builds with zero `HIGH` or `CRITICAL` vulnerabilities verified by Trivy.
+* **Automated Cloud CD:** Passwordless OIDC authentication to AWS IAM, direct DB migrations (`prisma migrate deploy`), and infrastructure synthesis via AWS CDK.
 
 For a deep dive into our pipeline architecture and container hardening strategies, see our [Architecture Documentation](./ARCHITECTURE.us.md#6-cicd-containerization--devsecops-pipeline).
 
