@@ -1,5 +1,6 @@
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
 
+
 export const loadProductionSecrets = async (): Promise<void> => {
 
     if (process.env.NODE_ENV !== 'production') return
@@ -25,9 +26,11 @@ export const loadProductionSecrets = async (): Promise<void> => {
 
         const secrets = JSON.parse(response.SecretString)
 
-        if (secrets.DATABASE_URL) {
-            process.env.DATABASE_URL = secrets.DATABASE_URL
-        }
+        Object.entries(secrets).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                process.env[key] = String(value)
+            }
+        })
 
     } catch (error) {
         console.error('Failed to load secrets from AWS Secrets Manager.');
