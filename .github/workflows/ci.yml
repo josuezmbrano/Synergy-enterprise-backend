@@ -192,8 +192,13 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-1
 
+      - name: Run Prisma Migrations (Production DB)
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: pnpm --filter @project/server prisma:migrate-deploy
+
       - name: Build monorepo packages
         run: pnpm run build:all
-      
+
       - name: CDK Synth & Deploy (Builds Docker image & updates AWS)
         run: pnpm --filter cdk exec cdk deploy --require-approval never
