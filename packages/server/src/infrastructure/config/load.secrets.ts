@@ -1,6 +1,5 @@
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
-import { keyBy } from 'lodash-es'
-import { object } from 'zod'
+
 
 export const loadProductionSecrets = async (): Promise<void> => {
 
