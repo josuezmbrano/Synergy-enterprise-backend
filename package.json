@@ -8,6 +8,7 @@
     "dev:server": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server dev",
     "start:server": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server start",
     "server:prisma-generate": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server prisma:generate",
+    "server:prisma-migrate-deploy": "dotenv -e .env -e packages/server/.env -- pnpm --filter @project/server prisma:migrate-deploy",
     "test:unit": "pnpm --filter @project/server test:unit",
     "test:integration": "pnpm --filter @project/server test:integration",
     "build:all": "pnpm -r build",
