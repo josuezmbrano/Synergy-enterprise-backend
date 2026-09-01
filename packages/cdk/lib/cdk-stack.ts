@@ -9,7 +9,7 @@ export class SynergyStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const iamConstruct = new SynergyIamConstruct(this, 'SynergyIam')
+    const iamConstruct = new SynergyIamConstruct(this, 'SynergyIam', { secretArn: 'arn:aws:secretsmanager:us-east-1:730335657596:secret:prod/synergy/backend-secrets-dmwg8r' })
 
     const apiConstruct = new SynergyApiConstruct(this, 'SynergyApi', {
       role: iamConstruct.role
