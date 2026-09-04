@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { requestContext } from 'infrastructure/logging/request.context.js'
+import { requestContext } from 'infrastructure/context/request.context.js'
 
 export const correlationMiddleware = (req: Request, res: Response, next: NextFunction): void => {
 

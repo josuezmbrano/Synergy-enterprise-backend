@@ -1,12 +1,12 @@
 import { ResendEmailVerificationCase } from 'application/use-cases/user/resend-email-verification.usecase.js';
 import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
+import { UserResentEmailVerificationEvent } from 'core/events/user-events/user.resent-email-verification.event.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { UserStatusVo } from 'core/value-objects/user/user-status.vo.js';
 import { getEnv } from 'infrastructure/config/env.config.js';
 import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
 import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
-import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 
@@ -14,6 +14,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
     let useCase: ResendEmailVerificationCase;
     let containerDI: ApplicationContainer
     let prisma: PrismaClient
+    let spyEventBus: ReturnType<typeof vi.spyOn>;
 
     beforeAll(() => {
         const env = getEnv()
@@ -22,11 +23,21 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
     })
 
     beforeEach(async () => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.clearAllMocks();
+
         await prisma.verificationToken.deleteMany({});
         await prisma.task.deleteMany({});
         await prisma.project.deleteMany({});
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
+        
+        if (containerDI.eda?.eventBus?.clear) {
+            containerDI.eda.eventBus.clear();
+        }
+
+        spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
 
         useCase = containerDI.modules.auth.useCases.resendEmailVerificationUseCase
     });
@@ -40,6 +51,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
             const execution = useCase.execute({ userId: randomUuid });
 
             await expect(execution).rejects.toThrow(UserErrorFactory.userNotFound().message);
+            expect(spyEventBus).not.toHaveBeenCalled()
         });
 
         it('should throw an error if the user is already ACTIVE (ensureIsStillPending invariant)', async () => {
@@ -55,6 +67,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
 
             const tokensCount = await prisma.verificationToken.count();
             expect(tokensCount).toBe(0);
+            expect(spyEventBus).not.toHaveBeenCalled()
         });
 
     });
@@ -84,6 +97,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
             });
             expect(tokensAfterCrash.length).toBe(1);
             expect(tokensAfterCrash[0].token).toBe(originalTokenValue);
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
         });
 
         it('should bypass cooldown, delete the previous token, and save the new one if the 60s period has passed', async () => {
@@ -109,6 +123,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
             });
 
             expect(tokensInDb.length).toBe(1);
+            expect(spyEventBus).toHaveBeenCalledTimes(2);
         });
 
         it('should rollback transaction if deleteToken fails within the unit of work scope', async () => {
@@ -137,6 +152,7 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
                 where: { user_id: primitives.publicId }
             });
             expect(tokensInDb.length).toBe(1);
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
 
             vi.restoreAllMocks();
         });
@@ -164,45 +180,16 @@ describe('ResendEmailVerificationCase - Integration Tests', () => {
             expect(tokenInDb).toBeDefined();
             expect(tokenInDb!.type).toBe('EMAIL_VERIFICATION');
 
-            // Fetch the global state bucket slice concurrently and isolate it exclusively by our recipient email
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === primitives.email);
-            expect(testEmails.length).toBe(1);
+            // Domain event emition verification
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
+            expect(spyEventBus).toHaveBeenCalledWith(expect.any(UserResentEmailVerificationEvent));
 
-            const capturedEmail = testEmails[0];
-            expect(capturedEmail.To[0].Address).toBe(primitives.email);
-
-            const detailedEmail = await mailpit.getMessageSummary(capturedEmail.ID);
-            expect(detailedEmail.Text).toContain(tokenInDb!.token);
+            const publishedEvent = spyEventBus.mock.calls[0][0] as UserResentEmailVerificationEvent;
+            expect(publishedEvent.aggregateId).toBe(primitives.publicId)
+            expect(publishedEvent.payload.fullname).toBe(userEntity.fullname);
+            expect(publishedEvent.payload.email).toBe(primitives.email);
+            expect(publishedEvent.payload.verificationToken).toBe(tokenInDb!.token);
         });
-
-        it('should complete execution successfully even if the mail service delivery fails (try/catch resilience)', async () => {
-            // Seed an unverified target profile to verify outbox notification handling boundaries are decoupled from core data commits
-            const userEntity = await seedUserDefault(prisma, { status: UserStatusVo.create('pending_verification'), email: UserEmailVo.create('randomemail@gmail.com') });
-            const primitives = userEntity.toPrimitives();
-
-            // Simulate external service blackouts by intercepting and rejecting notification dispatches
-            vi.spyOn(containerDI.services.mailService, 'sendEmail').mockRejectedValueOnce(
-                new Error('SMTP Gateway Timeout')
-            );
-
-            const output = await useCase.execute({ userId: primitives.publicId });
-
-            expect(output.success).toBe(true);
-
-            const tokenInDb = await prisma.verificationToken.findFirst({
-                where: { user_id: primitives.publicId }
-            });
-            expect(tokenInDb).toBeDefined();
-
-            // Assert delivery resilience safely by checking that 0 records filtered by our specific recipient hit the actual SMTP engine
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === primitives.email);
-            expect(testEmails.length).toBe(0);
-
-            vi.restoreAllMocks();
-        });
-
     });
 
 });

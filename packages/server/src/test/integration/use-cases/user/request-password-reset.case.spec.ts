@@ -1,16 +1,17 @@
 import { RequestPasswordResetCase } from 'application/use-cases/user/request-password-reset.usecase.js';
 import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js';
+import { UserRequestedPasswordResetEvent } from 'core/events/user-events/user-requested-password-reset.event.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { getEnv } from 'infrastructure/config/env.config.js';
 import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
 import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
-import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('RequestPasswordResetCase - Integration Tests', () => {
     let useCase: RequestPasswordResetCase;
     let containerDI: ApplicationContainer
     let prisma: PrismaClient
+    let spyEventBus: ReturnType<typeof vi.spyOn>;
 
     beforeAll(() => {
         const env = getEnv()
@@ -19,11 +20,21 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
     })
 
     beforeEach(async () => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.clearAllMocks();
+
         await prisma.verificationToken.deleteMany({});
         await prisma.task.deleteMany({});
         await prisma.project.deleteMany({});
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
+
+        if (containerDI.eda?.eventBus?.clear) {
+            containerDI.eda.eventBus.clear();
+        }
+
+        spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
 
         useCase = containerDI.modules.auth.useCases.requestPasswordResetUseCase
     });
@@ -47,10 +58,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
             const totalTokens = await prisma.verificationToken.count();
             expect(totalTokens).toBe(0);
 
-            // Fetch global outbox snapshot and assert that no message leak occurred for this specific target recipient
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === targetEmail);
-            expect(testEmails.length).toBe(0);
+            expect(spyEventBus).not.toHaveBeenCalled();
         });
 
     });
@@ -81,6 +89,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
 
             expect(tokensAfterCrash.length).toBe(1);
             expect(tokensAfterCrash[0].token).toBe(originalTokenValue);
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
         });
 
         it('should rollback transaction and not save the new token if deleteToken fails inside the execution scope', async () => {
@@ -109,6 +118,7 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
                 where: { user_id: primitives.publicId }
             });
             expect(tokensInDb.length).toBe(1);
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
 
             vi.restoreAllMocks();
         });
@@ -135,46 +145,16 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
             expect(tokenInDb).toBeDefined();
             expect(tokenInDb!.type).toBe('PASSWORD_RESET');
 
-            // Fetch the global state bucket slice concurrently and slice it exclusively by our recipient email
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === primitives.email);
-            expect(testEmails.length).toBe(1);
+            // Domain event emition verification
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
+            expect(spyEventBus).toHaveBeenCalledWith(expect.any(UserRequestedPasswordResetEvent));
 
-            const capturedEmail = testEmails[0];
-            expect(capturedEmail.To[0].Address).toBe(primitives.email);
-            expect(capturedEmail.Subject).toBeDefined();
-
-            const detailedEmail = await mailpit.getMessageSummary(capturedEmail.ID);
-            expect(detailedEmail.Text).toContain(tokenInDb!.token);
+            const publishedEvent = spyEventBus.mock.calls[0][0] as UserRequestedPasswordResetEvent;
+            expect(publishedEvent.aggregateId).toBe(primitives.publicId)
+            expect(publishedEvent.payload.fullname).toBe(userEntity.fullname);
+            expect(publishedEvent.payload.email).toBe(primitives.email);
+            expect(publishedEvent.payload.verificationToken).toBe(tokenInDb!.token);
         });
-
-        it('should complete execution successfully even if the mail server delivery fails (try/catch resilience)', async () => {
-            // Seed a regular user profile to dissociate safe database commits from downstream outbox service disruptions
-            const userEntity = await seedUserDefault(prisma, { email: UserEmailVo.create('otheremail@gmail.com') });
-            const primitives = userEntity.toPrimitives();
-
-            // Intercept downstream communication layers to force a simulated infrastructure timeout error
-            vi.spyOn(containerDI.services.mailService, 'sendEmail').mockRejectedValueOnce(
-                new Error('Mail provider timeout')
-            );
-
-            const output = await useCase.execute({ email: primitives.email });
-
-            expect(output.success).toBe(true);
-
-            const tokenInDb = await prisma.verificationToken.findFirst({
-                where: { user_id: primitives.publicId }
-            });
-            expect(tokenInDb).toBeDefined();
-
-            // Assert delivery resilience safely by checking that 0 records filtered by our specific recipient hit the actual SMTP engine
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === primitives.email);
-            expect(testEmails.length).toBe(0);
-
-            vi.restoreAllMocks();
-        });
-
     });
 
 });

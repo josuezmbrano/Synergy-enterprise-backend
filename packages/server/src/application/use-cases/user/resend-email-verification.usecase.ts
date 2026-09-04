@@ -9,9 +9,9 @@ import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
-import { IMailService } from 'application/ports/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { LoggerPort } from 'application/ports/logger.port.js';
+import { IEventBus } from 'application/ports/event-bus.port.js';
+import { UserResentEmailVerificationEvent } from 'core/events/user-events/user.resent-email-verification.event.js';
 
 
 export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerificationInput, ResendEmailVerificationOutput> {
@@ -19,9 +19,8 @@ export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerif
     constructor(
         private readonly userRepository: IUserRepository,
         private readonly tokenRepository: ITokenRepository,
-        private readonly mailService: IMailService,
         private readonly unitOfWork: IBaseUnitOfWork,
-        private readonly logger: LoggerPort
+        private readonly eventBus: IEventBus
     ) { }
 
     async execute(input: ResendEmailVerificationInput): Promise<ResendEmailVerificationOutput> {
@@ -57,16 +56,19 @@ export class ResendEmailVerificationCase implements BaseUseCase<ResendEmailVerif
             await this.tokenRepository.saveToken(verificationToken)
         })
 
+        await this.eventBus.publish(
+            new UserResentEmailVerificationEvent(
+                userAccount.publicId.value,
+                {
+                    email: userAccount.email.value,
+                    fullname: userAccount.fullname,
+                    verificationToken: verificationTokenId.value
+                }
+            )
+        )
+
 
        
-        try {
-            // SAVE AND SEND TOKEN TO USER EMAIL
-            await this.mailService.sendEmail({ to: userAccount.email.value, template: 'RESEND_EMAIL_VERIFICATION', data: { fullname: userAccount.fullname, token: verificationTokenId.value } })
-        } catch (error) {
-            this.logger.error('Failed to send verification email', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
-        }
-
-
         // OUTPUT PRIMITIVES TO CLIENT
         return {
             id: userAccount.publicId.value,

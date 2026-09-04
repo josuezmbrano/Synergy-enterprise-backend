@@ -1,6 +1,7 @@
 import { UpdateEmailCase } from 'application/use-cases/user/update-email.usecase.js';
 import { AuthErrorFactory } from 'core/errors/factories/auth-factory.error.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
+import { UserUpdatedEmailEvent } from 'core/events/user-events/user-updated-email.event.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
@@ -9,7 +10,6 @@ import { UserUsernameVo } from 'core/value-objects/user/user-username.vo.js';
 import { getEnv } from 'infrastructure/config/env.config.js';
 import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
 import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
-import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedTokenDefault, seedUserDefault, seedUserRandom } from 'test/utils/db-seeder.js';
 
 
@@ -39,6 +39,8 @@ describe('UpdateEmailCase - Integration Tests', () => {
     describe('Actor & Identity Validations', () => {
 
         it('should throw an error if the actor requesting the email update does not exist', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
+
             // Setup an unmapped random UUID payload to guarantee a database lookup miss
             const execution = useCase.execute({
                 actorId: '3c8d1976-5e58-472e-848e-d91ab2d8c30c',
@@ -47,9 +49,12 @@ describe('UpdateEmailCase - Integration Tests', () => {
             });
 
             await expect(execution).rejects.toThrow(UserErrorFactory.userNotFound().message);
+            expect(spyEventBus).not.toHaveBeenCalled();
         });
 
         it('should throw an invalid credentials error if the current password verification fails', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
+
             const correctPassword = 'CorrectPassword123!';
             const wrongPassword = 'WrongPassword123!';
 
@@ -73,6 +78,8 @@ describe('UpdateEmailCase - Integration Tests', () => {
                     description: 'The password provided does not match your current password.'
                 }).message
             );
+
+            expect(spyEventBus).not.toHaveBeenCalled();
         });
 
     });
@@ -80,6 +87,8 @@ describe('UpdateEmailCase - Integration Tests', () => {
     describe('Email Uniqueness Constraints', () => {
 
         it('should throw an error if the new email is already registered by another user', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
+
             const passwordPlane = 'SecurePass123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
 
@@ -105,9 +114,11 @@ describe('UpdateEmailCase - Integration Tests', () => {
             });
 
             await expect(execution).rejects.toThrow(UserErrorFactory.emailAlreadyExists().message);
+            expect(spyEventBus).not.toHaveBeenCalled();
         });
 
         it('should handle gracefully or throw an error if the new email is identical to the users current email', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
             const passwordPlane = 'SecurePass123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
 
@@ -124,6 +135,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
             });
 
             await expect(execution).rejects.toThrow(UserErrorFactory.emailAlreadyExists().message);
+            expect(spyEventBus).not.toHaveBeenCalled();
         });
 
     });
@@ -131,6 +143,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
     describe('Transactional Integrity (Unit of Work)', () => {
 
         it('should rollback user changes and token persistence if saveToken fails inside the transaction scope', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
             const passwordPlane = 'SecurePass123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
 
@@ -157,11 +170,13 @@ describe('UpdateEmailCase - Integration Tests', () => {
 
             const tokenCount = await prisma.verificationToken.count();
             expect(tokenCount).toBe(0);
+            expect(spyEventBus).not.toHaveBeenCalled();
 
             vi.restoreAllMocks();
         });
 
         it('should successfully clean existing old verification tokens if they exist, before saving the new one (Sad path rollback inside clean)', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
             const passwordPlane = 'SecurePass123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
 
@@ -192,6 +207,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
 
             const oldTokenCount = await prisma.verificationToken.count({ where: { token: oldToken.id.value } });
             expect(oldTokenCount).toBe(1);
+            expect(spyEventBus).not.toHaveBeenCalled();
 
             vi.restoreAllMocks();
         });
@@ -200,6 +216,7 @@ describe('UpdateEmailCase - Integration Tests', () => {
     describe('Orchestration Workflow & Notification Delivery', () => {
 
         it('should successfully update the email, clean old tokens, save the new one, generate a new session token, and deliver email notification (Happy Path)', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
             const passwordPlane = 'SecurePass123!';
             const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
 
@@ -236,57 +253,16 @@ describe('UpdateEmailCase - Integration Tests', () => {
             expect(finalTokens.length).toBe(1);
             expect(finalTokens[0].type).toBe('EMAIL_VERIFICATION');
 
-            // Extract only the outbound messages belonging to the current execution thread scope
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === targetNewEmail);
-            expect(testEmails.length).toBe(1);
+            // Domain event emition verification
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
+            expect(spyEventBus).toHaveBeenCalledWith(expect.any(UserUpdatedEmailEvent));
 
-            const capturedEmail = testEmails[0];
-            expect(capturedEmail.To[0].Address).toBe(targetNewEmail);
-
-            const detailedEmail = await mailpit.getMessageSummary(capturedEmail.ID);
-            expect(detailedEmail.Text).toContain(finalTokens[0].token);
+            const publishedEvent = spyEventBus.mock.calls[0][0] as UserUpdatedEmailEvent;
+            expect(publishedEvent.aggregateId).toBe(output.user.id)
+            expect(publishedEvent.payload.fullname).toBe(output.user.fullname);
+            expect(publishedEvent.payload.email).toBe(targetNewEmail);
+            expect(publishedEvent.payload.verificationToken).toBe(finalTokens[0].token);
         });
-
-        it('should complete execution successfully and return new session token even if SMTP delivery crashes (try/catch resilience)', async () => {
-            const passwordPlane = 'SecurePass123!';
-            const hashedPassword = await containerDI.services.bcryptPasswordHasher.hash(passwordPlane);
-
-            // Seed a functional actor record to evaluate execution limits against outer gateway disruptions
-            const userEntity = await seedUserDefault(prisma, {
-                password: UserPasswordVo.fromHash(hashedPassword)
-            });
-            const primitives = userEntity.toPrimitives();
-
-            // Setup dynamic parameter payloads to secure outbox context isolation from external side-effects
-            const uniqueId = Math.random().toString(36).substring(2, 11);
-            const targetNewEmail = `smtp-failure-test-${uniqueId}@synergy.com`;
-
-            // Simulate an external communication boundary dropout by intercepting and rejecting SMTP dispatches
-            vi.spyOn(containerDI.services.mailService, 'sendEmail').mockRejectedValueOnce(
-                new Error('SMTP Connection refused')
-            );
-
-            const output = await useCase.execute({
-                actorId: primitives.publicId,
-                currentPassword: passwordPlane,
-                newEmail: targetNewEmail
-            });
-
-            expect(output.user.email).toBe(targetNewEmail);
-            expect(output.token).toBeDefined();
-
-            const finalTokensCount = await prisma.verificationToken.count({ where: { user_id: primitives.publicId } });
-            expect(finalTokensCount).toBe(1);
-
-            // Assert delivery resilience safely by checking that 0 records filtered by our specific recipient hit the actual SMTP engine
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === targetNewEmail);
-            expect(testEmails.length).toBe(0);
-
-            vi.restoreAllMocks();
-        });
-
     });
 
 });
