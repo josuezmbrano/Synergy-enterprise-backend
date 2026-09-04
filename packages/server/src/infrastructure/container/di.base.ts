@@ -20,6 +20,7 @@ import { PinoLoggerAdapter } from 'infrastructure/logging/pino-logger.adapter.js
 import { createPinoOptions } from 'infrastructure/config/modules/logger.config.js';
 import { Env } from 'infrastructure/config/env.schema.js';
 import pino from 'pino';
+import { InMemoryEventBus } from 'infrastructure/events/in-memory-bus.event.js';
 
 export const createContainerBase = (env: Env) => {
 
@@ -56,6 +57,8 @@ export const createContainerBase = (env: Env) => {
 
     // INFRASTRUCTURE MIDDLEWARE INSTANCES
     const checkAuth = new CheckAuthMiddleware(jwtAuthService)
+
+    const eventBus = new InMemoryEventBus(pinoLogger)
 
 
     return {
@@ -96,6 +99,10 @@ export const createContainerBase = (env: Env) => {
 
         middlewares: {
             checkAuth
+        },
+
+        eda: {
+            eventBus
         }
     } as const
 }

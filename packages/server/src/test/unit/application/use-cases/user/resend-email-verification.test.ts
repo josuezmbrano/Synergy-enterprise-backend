@@ -1,4 +1,3 @@
-import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { ResendEmailVerificationCase } from 'application/use-cases/user/resend-email-verification.usecase.js'
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js'
@@ -6,32 +5,32 @@ import { TokenErrorFactory } from 'core/errors/factories/token-factory.error.js'
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js'
 import { ITokenRepository } from 'core/repositories/token.repository.js'
 import { IUserRepository } from 'core/repositories/user.repository.js'
-import { IMailService } from 'application/ports/mail-interface.service.js'
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js'
 import { TokenMother } from 'test/builders/token.mother.js'
 import { UserMother } from 'test/builders/user.mother.js'
 import { mock, MockProxy } from 'vitest-mock-extended'
+import { IEventBus } from 'application/ports/event-bus.port.js'
+import { UserResentEmailVerificationEvent } from 'core/events/user-events/user.resent-email-verification.event.js'
 
 describe('ResendEmailVerificationCase.', () => {
 
     let sut: ResendEmailVerificationCase
     let mockUserRepository: MockProxy<IUserRepository>
     let mockTokenRepository: MockProxy<ITokenRepository>
-    let mockMailService: MockProxy<IMailService>
+    let mockEventBus: MockProxy<IEventBus>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
-    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
 
         mockUserRepository = mock<IUserRepository>()
         mockTokenRepository = mock<ITokenRepository>()
-        mockMailService = mock<IMailService>()
+        mockEventBus = mock<IEventBus>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
-        mockLogger = mock<LoggerPort>()
+        
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
-        sut = new ResendEmailVerificationCase(mockUserRepository, mockTokenRepository, mockMailService, mockUnitOfWork, mockLogger)
+        sut = new ResendEmailVerificationCase(mockUserRepository, mockTokenRepository, mockUnitOfWork, mockEventBus)
     })
 
     describe('Validate acting user and account status (PHASE 1)', () => {
@@ -43,6 +42,7 @@ describe('ResendEmailVerificationCase.', () => {
 
             await expect(sut.execute(input)).rejects.toThrow(UserErrorFactory.userNotFound().message)
             expect(mockUserRepository.findByPublicId).toHaveBeenCalledWith(expect.any(UserIdVo))
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
 
         it('should throw an UserDomain user already active error if acting user is active and does not require an email resend', async () => {
@@ -53,6 +53,7 @@ describe('ResendEmailVerificationCase.', () => {
 
             await expect(sut.execute(input)).rejects.toThrow(UserErrorFactory.userAlreadyActive().message)
             expect(mockTokenRepository.findByUser).not.toHaveBeenCalled()
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
     })
 
@@ -72,6 +73,7 @@ describe('ResendEmailVerificationCase.', () => {
             await expect(sut.execute({ userId: user.publicId.value })).rejects.toThrow(TokenErrorFactory.tokenCooldownLimit().message)
             expect(mockTokenRepository.deleteToken).not.toHaveBeenCalled()
             expect(mockTokenRepository.saveToken).not.toHaveBeenCalled()
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
 
         it('should delete previous token if exists and is the same token type', async () => {
@@ -102,37 +104,13 @@ describe('ResendEmailVerificationCase.', () => {
 
             expect(mockTokenRepository.deleteToken).not.toHaveBeenCalled()
             expect(mockTokenRepository.saveToken).toHaveBeenCalledWith(expect.any(VerificationTokenEntityClass))
-            expect(mockMailService.sendEmail).toHaveBeenCalled()
+            expect(mockEventBus.publish).toHaveBeenCalledWith(expect.any(UserResentEmailVerificationEvent))
         })
     })
 
     describe('Service Resilience (PHASE 3)', () => {
 
-        it('should return success even if mail service fails', async () => {
-
-            const user = UserMother.createPending()
-            const mailError = new Error('SMTP Error')
-            
-            mockUserRepository.findByPublicId.mockResolvedValue(user)
-
-            mockMailService.sendEmail.mockRejectedValue(new Error('SMTP Error'))
-
-            const result = await sut.execute({ userId: user.publicId.value })
-
-            expect(result.success).toBe(true)
-            expect(mockTokenRepository.saveToken).toHaveBeenCalled()
-
-            expect(mockLogger.error).toHaveBeenCalledWith(
-                expect.any(String), // Captura cualquier mensaje que le hayas puesto, ej: 'Failed to resend email verification'
-                mailError,
-                {
-                    email: user.email.value,
-                    userId: user.publicId.value
-                }
-            )
-        })
-
-        it('should execute the entire orchestration correctly in a happy path', async () => {
+        it('should execute the entire orchestration correctly and publish VerificationEmailResentEvent in a happy path', async () => {
 
             const user = UserMother.createPending()
             const oldToken = TokenMother.createEmailVerification()
@@ -142,12 +120,26 @@ describe('ResendEmailVerificationCase.', () => {
 
             vi.spyOn(oldToken, 'ensureEmailCooldown').mockImplementation(() => { })
 
-            await sut.execute({ userId: user.publicId.value })
+            const result = await sut.execute({ userId: user.publicId.value })
 
+            expect(result.success).toBe(true)
             expect(mockUnitOfWork.run).toHaveBeenCalled()
             expect(mockTokenRepository.deleteToken).toHaveBeenCalledWith(oldToken)
             expect(mockTokenRepository.saveToken).toHaveBeenCalledWith(expect.any(VerificationTokenEntityClass))
-            expect(mockMailService.sendEmail).toHaveBeenCalled()
+
+           
+            expect(mockEventBus.publish).toHaveBeenCalledTimes(1)
+            expect(mockEventBus.publish).toHaveBeenCalledWith(
+                expect.any(UserResentEmailVerificationEvent)
+            )
+
+            
+            const publishedEvent = mockEventBus.publish.mock.calls[0][0] as UserResentEmailVerificationEvent
+            expect(publishedEvent.aggregateId).toBe(user.publicId.value)
+            expect(publishedEvent.payload.fullname).toBe(user.fullname)
+            expect(publishedEvent.payload.email).toBe(user.email.value)
+            expect(publishedEvent.payload.verificationToken).toEqual(expect.any(String))
         })
     })
+    
 })

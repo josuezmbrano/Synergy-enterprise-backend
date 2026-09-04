@@ -1,7 +1,7 @@
 import { PinoLoggerAdapter } from "infrastructure/logging/pino-logger.adapter.js"
 import pino from "pino"
 import { mock, MockProxy } from "vitest-mock-extended"
-import { requestContext } from "infrastructure/logging/request.context.js"
+import { requestContext } from "infrastructure/context/request.context.js"
 
 describe('PinoLoggerAdapter (Infrastructure)', () => {
 

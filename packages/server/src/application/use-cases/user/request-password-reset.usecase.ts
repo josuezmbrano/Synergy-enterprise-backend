@@ -3,14 +3,15 @@ import { RequestPasswordResetInput } from '@project/common/schemas/user.schema.j
 import { BaseUseCase } from '../base.use-case.js';
 import { IUserRepository } from 'core/repositories/user.repository.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'application/ports/mail-interface.service.js';
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { TokenIdVo } from 'core/value-objects/common/identifiers/token-id.vo.js';
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js';
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { LoggerPort } from 'application/ports/logger.port.js';
+import { IEventBus } from 'application/ports/event-bus.port.js';
+import { UserRequestedPasswordResetEvent } from 'core/events/user-events/user-requested-password-reset.event.js';
+
 
 
 export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordResetInput, RequestPasswordResetOutput> {
@@ -18,9 +19,8 @@ export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordRese
     constructor(
         private readonly userRepository: IUserRepository,
         private readonly tokenRepository: ITokenRepository,
-        private readonly mailService: IMailService,
+        private readonly eventBus: IEventBus,
         private readonly unitOfWork: IBaseUnitOfWork,
-        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: RequestPasswordResetInput): Promise<RequestPasswordResetOutput> {
@@ -61,12 +61,16 @@ export class RequestPasswordResetCase implements BaseUseCase<RequestPasswordRese
         })
 
 
-        // SAVE AND SEND TO EMAIL
-        try {
-            await this.mailService.sendEmail({ to: actingUserEmail.value, template: 'PASSWORD_RESET_REQUEST_VERIFICATION', data: { fullname: userAccount.fullname, token: verificationTokenId.value } })
-        } catch (error) {
-            this.logger.error('Failed to send password reset email verification', error, { email: userAccount.email.value, userId: userAccount.publicId.value })
-        }
+        await this.eventBus.publish(
+            new UserRequestedPasswordResetEvent(
+                userAccount.publicId.value,
+                {
+                    email: actingUserEmail.value,
+                    fullname: userAccount.fullname,
+                    verificationToken: verificationTokenId.value
+                }
+            )
+        )
 
 
         // RETURN PRIMTIIVE TO CLIENT

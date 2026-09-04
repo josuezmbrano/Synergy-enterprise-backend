@@ -18,9 +18,9 @@ import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'application/ports/mail-interface.service.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { LoggerPort } from 'application/ports/logger.port.js';
+import { IEventBus } from 'application/ports/event-bus.port.js';
+import { UserRegisteredEvent } from 'core/events/user-events/user-registered.event.js';
 
 export class RegisterUserCase implements BaseUseCase<RegisterUserInput, RegisterUserOutput> {
 
@@ -29,9 +29,8 @@ export class RegisterUserCase implements BaseUseCase<RegisterUserInput, Register
         private readonly passwordHasher: IPasswordHasher,
         private readonly authService: IAuthService,
         private readonly tokenRepository: ITokenRepository,
-        private readonly mailService: IMailService,
+        private readonly eventBus: IEventBus,
         private readonly unitOfWork: IBaseUnitOfWork,
-        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
@@ -86,14 +85,17 @@ export class RegisterUserCase implements BaseUseCase<RegisterUserInput, Register
             return { newUserPersisted }
         })
 
-
-        // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE SIGNUP IS COMPLETED 
-        try {
-            await this.mailService.sendEmail({ to: newUserPersisted.email.value, template: 'REGISTER_VERIFICATION', data: { fullname: newUserPersisted.fullname, token: validationTokenId.value } })
-        } catch (error) {
-            this.logger.error('Failed to send registration email', error, { email: newUserPersisted.email.value, userId: newUserPersisted.publicId.value })
-        }
-
+        // PUBLISH DOMAIN EVENT
+        await this.eventBus.publish(
+            new UserRegisteredEvent(
+                newUserPersisted.publicId.value,
+                {
+                    email: newUserPersisted.email.value,
+                    fullname: newUserPersisted.fullname,
+                    verificationToken: validationTokenId.value
+                }
+            )
+        )
 
         // GENERATE AUTH SESSION TOKEN
         const tokenGenerated = await this.authService.generateToken({

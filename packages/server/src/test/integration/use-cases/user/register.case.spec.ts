@@ -1,10 +1,10 @@
 import { RegisterUserCase } from 'application/use-cases/user/register-user.usecase.js';
 import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js';
+import { UserRegisteredEvent } from 'core/events/user-events/user-registered.event.js';
 import { getEnv } from 'infrastructure/config/env.config.js';
 import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
 import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { UserMother } from 'test/builders/user.mother.js';
-import { mailpit } from 'test/clients/mailpit.client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
 describe('RegisterUserCase - Integration Tests', () => {
@@ -94,6 +94,7 @@ describe('RegisterUserCase - Integration Tests', () => {
     describe('Orchestration Workflow & External Side-Effects', () => {
 
         it('should successfully complete the entire registration workflow (Happy Path)', async () => {
+            const spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
             // Setup dynamic parameters with unique string components to completely isolate parallel outbox evaluation
             const uniqueId = Math.random().toString(36).substring(2, 11);
             const input = {
@@ -128,55 +129,20 @@ describe('RegisterUserCase - Integration Tests', () => {
             const isPasswordHashed = await containerDI.services.bcryptPasswordHasher.compare(input.password, userInDb!.password);
             expect(isPasswordHashed).toBe(true);
 
-            // Fetch the global Mailpit state container slice to verify outbound workflow delivery concurrently
-            const mailpitResponse = await mailpit.listMessages();
-
-            // Isolate and extract exclusively the message context targeted to this current test's unique payload
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === input.email);
-            expect(testEmails.length).toBe(1);
-
-            const capturedEmail = testEmails[0];
-            expect(capturedEmail.To[0].Address).toBe(input.email);
-            expect(capturedEmail.From.Address).toBe('onboarding@resend.dev');
-            expect(capturedEmail.Subject).toBeDefined();
-
             const tokenInDb = await prisma.verificationToken.findFirst({
                 where: { user_id: output.user.id }
             });
             expect(tokenInDb).toBeDefined();
-            expect(capturedEmail.Snippet).toContain(tokenInDb!.token);
-        });
+            
+            // Domain event emition verification
+            expect(spyEventBus).toHaveBeenCalledTimes(1);
+            expect(spyEventBus).toHaveBeenCalledWith(expect.any(UserRegisteredEvent));
 
-        it('should complete registration successfully even if the mail service fails (try/catch resilience)', async () => {
-            // Setup dynamic parameters with unique string components to completely isolate parallel outbox evaluation
-            const uniqueId = Math.random().toString(36).substring(2, 11);
-            const input = {
-                name: 'John',
-                lastname: 'Doe',
-                email: `johndoe-${uniqueId}@synergy.com`,
-                username: `newuser_${uniqueId}`,
-                password: 'Somepassword123!'
-            };
-
-            // Force a connection drop in the notification gateway to evaluate non-blocking error boundaries
-            vi.spyOn(containerDI.services.mailService, 'sendEmail').mockRejectedValueOnce(
-                new Error('SMTP Server Connection Refused')
-            );
-
-            const output = await useCase.execute(input);
-
-            expect(output).toBeDefined();
-            expect(output.user.username).toBe(input.username);
-
-            const userInDb = await prisma.user.findFirst({ where: { username: input.username } });
-            expect(userInDb).toBeDefined();
-
-            // Verify infrastructure isolation by confirming zero messages were dropped into the outbox for this recipient
-            const mailpitResponse = await mailpit.listMessages();
-            const testEmails = mailpitResponse.messages.filter(msg => msg.To[0].Address === input.email);
-            expect(testEmails.length).toBe(0);
-
-            vi.restoreAllMocks();
+            const publishedEvent = spyEventBus.mock.calls[0][0] as UserRegisteredEvent;
+            expect(publishedEvent.aggregateId).toBe(output.user.id);
+            expect(publishedEvent.payload.email).toBe(output.user.email);
+            expect(publishedEvent.payload.fullname).toBe(output.user.fullname);
+            expect(publishedEvent.payload.verificationToken).toBe(tokenInDb!.token);
         });
 
         it('should generate a verification token with a valid future expiration date', async () => {
@@ -201,7 +167,6 @@ describe('RegisterUserCase - Integration Tests', () => {
             const now = new Date();
             expect(new Date(tokenInDb!.expires_at).getTime()).toBeGreaterThan(now.getTime());
         });
-
     });
 
 });

@@ -1,4 +1,3 @@
-import { LoggerPort } from 'application/ports/logger.port.js'
 import { IBaseUnitOfWork } from 'application/use-cases/base.unit-of-work.js'
 import { UpdateEmailCase } from 'application/use-cases/user/update-email.usecase.js'
 import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity.class.js'
@@ -8,12 +7,13 @@ import { UserErrorFactory } from 'core/errors/factories/user-factory.error.js'
 import { ITokenRepository } from 'core/repositories/token.repository.js'
 import { IUserRepository } from 'core/repositories/user.repository.js'
 import { IAuthService } from 'application/ports/auth-interface.service.js'
-import { IMailService } from 'application/ports/mail-interface.service.js'
 import { IPasswordHasher } from 'core/ports/password-interface.service.js'
 import { UserIdVo } from 'core/value-objects/common/identifiers/user-id.vo.js'
 import { TokenMother } from 'test/builders/token.mother.js'
 import { UserMother } from 'test/builders/user.mother.js'
 import { mock, MockProxy } from 'vitest-mock-extended'
+import { IEventBus } from 'application/ports/event-bus.port.js'
+import { UserUpdatedEmailEvent } from 'core/events/user-events/user-updated-email.event.js'
 
 describe('UpdateEmailCase', () => {
 
@@ -22,9 +22,8 @@ describe('UpdateEmailCase', () => {
     let mockTokenRepository: MockProxy<ITokenRepository>
     let mockPasswordHasher: MockProxy<IPasswordHasher>
     let mockAuthService: MockProxy<IAuthService>
-    let mockMailService: MockProxy<IMailService>
+    let mockEventBus: MockProxy<IEventBus>
     let mockUnitOfWork: MockProxy<IBaseUnitOfWork>
-    let mockLogger: MockProxy<LoggerPort>
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -33,13 +32,13 @@ describe('UpdateEmailCase', () => {
         mockTokenRepository = mock<ITokenRepository>()
         mockPasswordHasher = mock<IPasswordHasher>()
         mockAuthService = mock<IAuthService>()
-        mockMailService = mock<IMailService>()
+        mockEventBus = mock<IEventBus>()
         mockUnitOfWork = mock<IBaseUnitOfWork>()
-        mockLogger = mock<LoggerPort>()
+
 
         mockUnitOfWork.run.mockImplementation(async (work) => await work())
 
-        sut = new UpdateEmailCase(mockUserRepository, mockTokenRepository, mockPasswordHasher, mockAuthService, mockMailService, mockUnitOfWork, mockLogger)
+        sut = new UpdateEmailCase(mockUserRepository, mockTokenRepository, mockPasswordHasher, mockAuthService, mockEventBus, mockUnitOfWork)
     })
 
 
@@ -53,6 +52,7 @@ describe('UpdateEmailCase', () => {
             await expect(sut.execute(input)).rejects.toThrow(UserErrorFactory.userNotFound().message)
             expect(mockPasswordHasher.compare).not.toHaveBeenCalled()
             expect(mockUserRepository.findByPublicId).toHaveBeenCalledWith(expect.any(UserIdVo))
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
     })
 
@@ -68,6 +68,7 @@ describe('UpdateEmailCase', () => {
             await expect(sut.execute(input)).rejects.toThrow(AuthErrorFactory.invalidCredentials().message)
             expect(mockPasswordHasher.compare).toHaveBeenCalledWith(input.currentPassword, user.password.value)
             expect(mockUserRepository.emailExists).not.toHaveBeenCalled()
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
     })
 
@@ -85,12 +86,13 @@ describe('UpdateEmailCase', () => {
 
             await expect(sut.execute(input)).rejects.toThrow(UserErrorFactory.emailAlreadyExists().message)
             expect(spyOnUpdate).not.toHaveBeenCalled()
+            expect(mockEventBus.publish).not.toHaveBeenCalled()
         })
     })
 
     describe('Tokens creation, persistence and orchestration (PHASE 4)', () => {
 
-        it('should correctly create session, verification token and update email, persist verification and email change and execute email service', async () => {
+        it('should correctly create session, verification token, update email, persist and publish UserUpdatedEmailEvent', async () => {
             const user = UserMother.reconstituteDefault()
             const oldToken = TokenMother.createEmailVerification()
             mockUserRepository.findByPublicId.mockResolvedValue(user)
@@ -109,7 +111,18 @@ describe('UpdateEmailCase', () => {
             expect(mockTokenRepository.deleteToken).toHaveBeenCalledWith(oldToken)
             expect(mockUserRepository.save).toHaveBeenCalledWith(expect.any(UserEntityClass))
             expect(mockTokenRepository.saveToken).toHaveBeenCalledWith(expect.any(VerificationTokenEntityClass))
-            expect(mockMailService.sendEmail).toHaveBeenCalled()
+            
+            
+            expect(mockEventBus.publish).toHaveBeenCalledTimes(1)
+            expect(mockEventBus.publish).toHaveBeenCalledWith(
+                expect.any(UserUpdatedEmailEvent)
+            )
+
+            const publishedEvent = mockEventBus.publish.mock.calls[0][0] as UserUpdatedEmailEvent
+            expect(publishedEvent.aggregateId).toBe(user.publicId.value)
+            expect(publishedEvent.payload.fullname).toBe(user.fullname)
+            expect(publishedEvent.payload.email).toBe('some@email.com')
+            expect(publishedEvent.payload.verificationToken).toEqual(expect.any(String))
         })
 
         it('should correctly return expected DTO format', async () => {
@@ -133,33 +146,6 @@ describe('UpdateEmailCase', () => {
             expect(results.user.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
             expect(results.user.email).toBe('new@email.com')
             expect(results.token).toBe('asdjasd213asdj')
-        })
-
-        it('should remain resilient and complete execution if the mail service fails', async () => {
-            const user = UserMother.reconstituteDefault()
-            const mailError = new Error('SMTP Error')
-
-            mockUserRepository.findByPublicId.mockResolvedValue(user)
-            mockPasswordHasher.compare.mockResolvedValue(true)
-            mockUserRepository.emailExists.mockResolvedValue(false)
-            mockTokenRepository.findByUser.mockResolvedValue(null)
-            mockMailService.sendEmail.mockRejectedValue(new Error('SMTP Error'))
-            mockUserRepository.save.mockResolvedValue(user)
-
-            const input = { actorId: user.publicId.value, newEmail: 'new@email.com', currentPassword: user.password.value }
-
-            const results = await sut.execute(input)
-            expect(results.user.email).toBe('new@email.com')
-            expect(mockUserRepository.save).toHaveBeenCalled()
-
-            expect(mockLogger.error).toHaveBeenCalledWith(
-                'Failed to send email update verification',
-                mailError,
-                {
-                    email: 'new@email.com',
-                    userId: user.publicId.value
-                }
-            )
         })
     })
 

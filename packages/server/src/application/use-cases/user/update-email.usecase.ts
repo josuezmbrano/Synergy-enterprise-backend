@@ -13,10 +13,11 @@ import { VerificationTokenEntityClass } from 'core/entities/classes/token-entity
 import { TokenTypeVo } from 'core/value-objects/token/token-type.vo.js';
 import { TokenExpirationVo } from 'core/value-objects/token/token-expiration.vo.js';
 import { ITokenRepository } from 'core/repositories/token.repository.js';
-import { IMailService } from 'application/ports/mail-interface.service.js';
 import { UserEntityClass } from 'core/entities/classes/user-entity.class.js';
 import { IBaseUnitOfWork } from '../base.unit-of-work.js';
-import { LoggerPort } from 'application/ports/logger.port.js';
+import { IEventBus } from 'application/ports/event-bus.port.js';
+import { UserUpdatedEmailEvent } from 'core/events/user-events/user-updated-email.event.js';
+
 
 export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, UpdateUserEmailOutput> {
 
@@ -25,9 +26,8 @@ export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, Update
         private readonly tokenRepository: ITokenRepository,
         private readonly passwordHasher: IPasswordHasher,
         private readonly authService: IAuthService,
-        private readonly mailService: IMailService,
+        private readonly eventBus: IEventBus,
         private readonly unitOfWork: IBaseUnitOfWork,
-        private readonly logger: LoggerPort
     ) { }
 
     async execute(input: UpdateUserEmailInput): Promise<UpdateUserEmailOutput> {
@@ -94,12 +94,17 @@ export class UpdateEmailCase implements BaseUseCase<UpdateUserEmailInput, Update
         })
 
 
-        // SEND THE MAIL SERVICE TO PERMIT USER REVERIFICATION ONCE UPDATE IS COMPLETED 
-        try {
-            await this.mailService.sendEmail({ to: userUpdated.email.value, template: 'EMAIL_UPDATE_VERIFICATION', data: { fullname: userUpdated.fullname, token: validationToken.value } })
-        } catch (error) {
-            this.logger.error('Failed to send email update verification', error, { email: userUpdated.email.value, userId: userAccount.publicId.value })
-        }
+        await this.eventBus.publish(
+            new UserUpdatedEmailEvent(
+                userUpdated.publicId.value,
+                {
+                    email: userUpdated.email.value,
+                    fullname: userUpdated.fullname,
+                    verificationToken: validationToken.value
+                }
+            )
+        )
+
 
 
         return this.mapToOutput(userUpdated, newSessionToken)
