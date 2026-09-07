@@ -82,8 +82,8 @@ model Project {
 
   owner User @relation(fields: [owner_id], references: [id])
 
-  tasks   Task[]
-  members Member[]
+  tasks       Task[]
+  members     Member[]
   invitations Invitation[]
 
   @@index([owner_id])
@@ -187,4 +187,24 @@ model Invitation {
   invited_by   User    @relation("InvitedBy", fields: [invited_by_id], references: [id])
 
   @@map("invitations")
+}
+
+// EVENT IDEMPOTENCE ENUM
+enum EventStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ProcessedEvent {
+  id           String      @id @default(uuid()) @db.Uuid
+  event_id     String      @db.Uuid
+  event_name   String
+  consumer     String
+  status       EventStatus @default(COMPLETED)
+  processed_at DateTime    @default(now())
+  completed_at DateTime?
+
+  @@unique([event_id, consumer])
+  @@map("processed_events")
 }
