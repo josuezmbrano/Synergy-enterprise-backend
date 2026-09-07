@@ -1,4 +1,4 @@
-import { LoggerPort } from "application/ports/logger.port.js";
+import { LoggerPort } from "core/ports/logger.port.js";
 import { requestContext } from "../context/request.context.js";
 import pino from "pino";
 
