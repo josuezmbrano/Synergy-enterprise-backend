@@ -20,9 +20,9 @@ import { PinoLoggerAdapter } from 'infrastructure/logging/pino-logger.adapter.js
 import { createPinoOptions } from 'infrastructure/config/modules/logger.config.js';
 import { Env } from 'infrastructure/config/env.schema.js';
 import pino from 'pino';
-import { InMemoryEventBus } from 'infrastructure/events/in-memory-bus.event.js';
 import { PrismaIdempotencyRepository } from 'infrastructure/events/idempotency.prisma.js';
 import { IdempotentHandlerGuard } from 'core/events/idempotent-handler.guard.js';
+import { createEventBus } from 'infrastructure/config/modules/event-bus.config.js';
 
 export const createContainerBase = (env: Env) => {
 
@@ -61,7 +61,7 @@ export const createContainerBase = (env: Env) => {
     const checkAuth = new CheckAuthMiddleware(jwtAuthService)
 
     // EDAC (Event driven architecture components)
-    const eventBus = new InMemoryEventBus(pinoLogger)
+    const eventBus = createEventBus(env, pinoLogger)
     const idempotencyRepository = new PrismaIdempotencyRepository(prisma)
     const idempotentHandlerGuard = new IdempotentHandlerGuard(idempotencyRepository, pinoLogger)
 

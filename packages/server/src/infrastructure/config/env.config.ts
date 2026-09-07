@@ -2,7 +2,6 @@ import z from "zod";
 import { Env, envSchema } from "./env.schema.js";
 
 
-
 export const getEnv = (): Env => {
   const result = envSchema.safeParse(process.env)
 
