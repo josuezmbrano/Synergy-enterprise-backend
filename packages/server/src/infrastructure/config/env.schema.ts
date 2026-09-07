@@ -25,7 +25,7 @@ export const envSchema = z.object({
     // LOGGER LEVELS
     LOG_LEVEL:
         z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
-        .default('info'),
+            .default('info'),
 
     // EXTERNAL PROVIDERS
     RESEND_API_KEY:
@@ -33,6 +33,11 @@ export const envSchema = z.object({
             .min(1, 'RESEND_API_KEY cannot be empty'),
     DEV_PERSONAL_EMAIL:
         z.email({ error: 'DEV_PERSONAL_EMAIL is required' }),
+
+    // EDA & AWS EventBridge Configuration
+    EVENT_BUS_PROVIDER: z.enum(['aws', 'memory']).default('memory'),
+    EVENT_BRIDGE_BUS_NAME: z.string().min(1, 'EVENT_BRIDGE_BUS_NAME is required when using AWS EventBridge'),
+    AWS_REGION: z.string().default('us-east-1'),
 
     // TEST MAILPIT DEFAULTS
     TEST_MAILPIT_HOST:

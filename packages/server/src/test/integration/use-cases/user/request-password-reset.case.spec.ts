@@ -4,6 +4,7 @@ import { UserRequestedPasswordResetEvent } from 'core/events/user-events/user-re
 import { UserEmailVo } from 'core/value-objects/user/user-email.vo.js';
 import { getEnv } from 'infrastructure/config/env.config.js';
 import { ApplicationContainer, createContainer } from 'infrastructure/container/di.config.js';
+import { InMemoryEventBus } from 'infrastructure/events/in-memory-bus.event.js';
 import { PrismaClient } from 'infrastructure/generated/prisma/client.js';
 import { seedUserDefault } from 'test/utils/db-seeder.js';
 
@@ -30,9 +31,8 @@ describe('RequestPasswordResetCase - Integration Tests', () => {
         await prisma.member.deleteMany({});
         await prisma.user.deleteMany({});
 
-        if (containerDI.eda?.eventBus?.clear) {
-            containerDI.eda.eventBus.clear();
-        }
+        const eventBus = containerDI.eda.eventBus
+        if (eventBus instanceof InMemoryEventBus) eventBus.clear()
 
         spyEventBus = vi.spyOn(containerDI.eda.eventBus, 'publish');
 

@@ -33,7 +33,7 @@ export abstract class BaseDomainEvent<TPayload = Record<string, unknown>> {
             occurredAt: this.occurredAt,
             payload: this.payload,
             metadata: {
-                correlationId: this.metadata?.causationId ?? this.eventId,
+                correlationId: this.metadata?.correlationId ?? this.eventId,
                 causationId: this.metadata?.causationId,
                 actorId: this.metadata?.actorId,
                 version: this.metadata?.version ?? 1
